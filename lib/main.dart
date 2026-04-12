@@ -1,6 +1,8 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'router/app_router.dart';
+import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/course_viewmodel.dart';
 
 void main() {
@@ -15,19 +17,46 @@ class CatApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CourseViewModel()),
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'CAT Cursos',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.pinkAccent),
+          colorScheme: const ColorScheme(
+            brightness: Brightness.light,
+            primary: Color(0xFF1976D2),
+            onPrimary: Colors.white,
+            secondary: Colors.white,
+            onSecondary: Color(0xFF1976D2),
+            error: Colors.red,
+            onError: Colors.white,
+            surface: Colors.white,
+            onSurface: Colors.black,
+          ),
+          scaffoldBackgroundColor: Colors.white,
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              backgroundColor: const Color(0xFF1976D2),
+              foregroundColor: Colors.white,
+            ),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           useMaterial3: true,
         ),
-        home: const Scaffold(
-          body: Center(
-            child: Text('CAT — Cursos e Aprendizado'),
-          ),
-        ),
+        routerConfig: AppRouter.router,
       ),
     );
   }

@@ -70,7 +70,7 @@ class _LoginViewState extends State<LoginView> {
                         TextFormField(
                           controller: _raController,
                           decoration: InputDecoration(
-                            labelText: 'RA',
+                            labelText: 'Nome Completo',
                             border: _border(),
                             enabledBorder: _border(),
                             focusedBorder: _border(),

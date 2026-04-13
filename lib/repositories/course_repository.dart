@@ -59,7 +59,7 @@ class CourseRepository {
   }
 
   bool enroll(Course course){
-    final alreadyEnrolled = _enrolledCourses.any((course) => course.id == course.id);
+    final alreadyEnrolled = _enrolledCourses.any((c) => c.id == course.id);
     if (alreadyEnrolled) return false;
     _enrolledCourses.add(course);
     return true;

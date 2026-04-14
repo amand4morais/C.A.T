@@ -11,9 +11,11 @@ class AuthViewModel extends ChangeNotifier {
   final AuthRepository _repository = AuthRepository();
 
   bool _isLoading = false;
+  bool _isLoggedIn = false;
   User? _currentUser;
 
   bool get isLoading => _isLoading;
+  bool get isLoggedIn => _isLoggedIn;
   User? get currentUser => _currentUser;
 
   String? validateRa(String? value) {
@@ -79,20 +81,27 @@ class AuthViewModel extends ChangeNotifier {
     return null;
   }
 
+  Future<void> checkLoginStatus() async {
+    final ra = await _repository.loadLoggedUser();
+    if (ra != null) {
+      _isLoggedIn = true;
+      notifyListeners();
+    }
+  }
+
   Future<bool> loginUser(String ra, String password) async {
     _setLoading(true);
     final user = _repository.login(ra, password);
-    _setLoading(false);
     if (user != null) {
       _currentUser = user;
-      notifyListeners();
-      return true;
+      _isLoggedIn = true;
+      await _repository.saveLoggedUser(ra);
     }
-    return false;
+    _setLoading(false);
+    return user != null;
   }
 
-  Future<bool> registerUser({
-    required String ra,
+  Future<String?> registerUser({
     required String fullName,
     required String email,
     required String birthDate,
@@ -103,16 +112,21 @@ class AuthViewModel extends ChangeNotifier {
     final day = int.parse(parts[0]);
     final month = int.parse(parts[1]);
     final year = int.parse(parts[2]);
-    final user = User(
-      ra: ra,
+    final ra = await _repository.register(
       nome: fullName,
       email: email,
       dataNascimento: DateTime(year, month, day),
       senha: password,
     );
-    _repository.register(user);
     _setLoading(false);
-    return true;
+    return ra;
+  }
+
+  Future<void> logout() async {
+    _currentUser = null;
+    _isLoggedIn = false;
+    await _repository.clearLoggedUser();
+    notifyListeners();
   }
 
   void _setLoading(bool value) {

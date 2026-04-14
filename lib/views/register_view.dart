@@ -14,15 +14,14 @@ class RegisterView extends StatefulWidget {
 
 class _RegisterViewState extends State<RegisterView> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _raController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _raController.dispose();
     _fullNameController.dispose();
     _emailController.dispose();
     _birthDateController.dispose();
@@ -34,18 +33,35 @@ class _RegisterViewState extends State<RegisterView> {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
-    final success = await viewModel.registerUser(
-      ra: _raController.text.trim(),
+    final ra = await viewModel.registerUser(
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
       birthDate: _birthDateController.text.trim(),
       password: _passwordController.text,
     );
 
-    if (!mounted) return;
-    if (success) {
-      context.go('/login');
-    }
+    if (!mounted || ra == null) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cadastro Realizado!'),
+        content: Text(
+          'Seu R.A é:\n\n$ra\n\nAnote-o, pois será necessário para o login.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: ra));
+              Navigator.of(ctx).pop();
+              context.go('/login');
+            },
+            child: const Text('Copiar e ir para Login'),
+          ),
+        ],
+      ),
+    );
   }
 
   OutlineInputBorder _border() {
@@ -78,17 +94,6 @@ class _RegisterViewState extends State<RegisterView> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
-                        TextFormField(
-                          controller: _raController,
-                          decoration: InputDecoration(
-                            labelText: 'R.A',
-                            border: _border(),
-                            enabledBorder: _border(),
-                            focusedBorder: _border(),
-                          ),
-                          validator: viewModel.validateRa,
-                        ),
-                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _fullNameController,
                           decoration: InputDecoration(
@@ -132,12 +137,24 @@ class _RegisterViewState extends State<RegisterView> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: 'Senha',
                             border: _border(),
                             enabledBorder: _border(),
                             focusedBorder: _border(),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
                           ),
                           validator: viewModel.validatePassword,
                         ),

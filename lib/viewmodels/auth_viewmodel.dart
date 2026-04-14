@@ -1,14 +1,20 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
+
+import '../models/user_model.dart';
+import '../repositories/auth_repository.dart';
 
 class AuthViewModel extends ChangeNotifier {
   static final RegExp _emailRegExp = RegExp(
     r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$",
   );
+
+  final AuthRepository _repository = AuthRepository();
+
   bool _isLoading = false;
+  User? _currentUser;
 
   bool get isLoading => _isLoading;
+  User? get currentUser => _currentUser;
 
   String? validateRa(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -73,21 +79,38 @@ class AuthViewModel extends ChangeNotifier {
     return null;
   }
 
-  Future<bool> login({required String ra, required String password}) async {
+  Future<bool> loginUser(String ra, String password) async {
     _setLoading(true);
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+    final user = _repository.login(ra, password);
     _setLoading(false);
-    return true;
+    if (user != null) {
+      _currentUser = user;
+      notifyListeners();
+      return true;
+    }
+    return false;
   }
 
-  Future<bool> register({
+  Future<bool> registerUser({
+    required String ra,
     required String fullName,
     required String email,
     required String birthDate,
     required String password,
   }) async {
     _setLoading(true);
-    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    final parts = birthDate.split('/');
+    final day = int.parse(parts[0]);
+    final month = int.parse(parts[1]);
+    final year = int.parse(parts[2]);
+    final user = User(
+      ra: ra,
+      nome: fullName,
+      email: email,
+      dataNascimento: DateTime(year, month, day),
+      senha: password,
+    );
+    _repository.register(user);
     _setLoading(false);
     return true;
   }

@@ -14,6 +14,7 @@ class RegisterView extends StatefulWidget {
 
 class _RegisterViewState extends State<RegisterView> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _raController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _birthDateController = TextEditingController();
@@ -21,6 +22,7 @@ class _RegisterViewState extends State<RegisterView> {
 
   @override
   void dispose() {
+    _raController.dispose();
     _fullNameController.dispose();
     _emailController.dispose();
     _birthDateController.dispose();
@@ -32,7 +34,8 @@ class _RegisterViewState extends State<RegisterView> {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
-    final success = await viewModel.register(
+    final success = await viewModel.registerUser(
+      ra: _raController.text.trim(),
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
       birthDate: _birthDateController.text.trim(),
@@ -75,6 +78,17 @@ class _RegisterViewState extends State<RegisterView> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
+                        TextFormField(
+                          controller: _raController,
+                          decoration: InputDecoration(
+                            labelText: 'R.A',
+                            border: _border(),
+                            enabledBorder: _border(),
+                            focusedBorder: _border(),
+                          ),
+                          validator: viewModel.validateRa,
+                        ),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _fullNameController,
                           decoration: InputDecoration(

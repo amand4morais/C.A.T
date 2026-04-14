@@ -27,14 +27,18 @@ class _LoginViewState extends State<LoginView> {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
-    final success = await viewModel.login(
-      ra: _raController.text.trim(),
-      password: _passwordController.text,
+    final success = await viewModel.loginUser(
+      _raController.text.trim(),
+      _passwordController.text,
     );
 
     if (!mounted) return;
     if (success) {
       context.go('/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('R.A ou senha incorretos')),
+      );
     }
   }
 
@@ -70,7 +74,7 @@ class _LoginViewState extends State<LoginView> {
                         TextFormField(
                           controller: _raController,
                           decoration: InputDecoration(
-                            labelText: 'Nome Completo',
+                            labelText: 'R.A',
                             border: _border(),
                             enabledBorder: _border(),
                             focusedBorder: _border(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/course_model.dart';
+import '../views/available_courses_view.dart';
 import '../views/course_details_view.dart';
 import '../views/home_view.dart';
 import '../views/login_view.dart';
@@ -29,7 +30,7 @@ class AppRouter {
       GoRoute(
         path: '/available-courses',
         builder: (BuildContext context, GoRouterState state) =>
-            const AvailableCoursesPlaceholderView(),
+            const AvailableCoursesView(),
       ),
       GoRoute(
         path: '/course-details',
@@ -45,18 +46,6 @@ class AppRouter {
       ),
     ],
   );
-}
-
-class AvailableCoursesPlaceholderView extends StatelessWidget {
-  const AvailableCoursesPlaceholderView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Cursos Disponíveis')),
-      body: const Center(child: Text('Cursos Disponíveis — em breve')),
-    );
-  }
 }
 
 class ProfilePlaceholderView extends StatelessWidget {

@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'repositories/auth_repository.dart';
 import 'router/app_router.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/course_viewmodel.dart';
 
-void main() {
-  runApp(const CatApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AuthRepository().init();
+  final authViewModel = AuthViewModel();
+  await authViewModel.checkLoginStatus();
+  runApp(CatApp(authViewModel: authViewModel));
 }
 
 class CatApp extends StatelessWidget {
-  const CatApp({super.key});
+  final AuthViewModel authViewModel;
+
+  const CatApp({required this.authViewModel, super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: authViewModel),
         ChangeNotifierProvider(create: (_) => CourseViewModel()),
-        ChangeNotifierProvider(create: (_) => AuthViewModel()),
       ],
       child: MaterialApp.router(
         title: 'CAT Cursos',
@@ -56,7 +63,9 @@ class CatApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        routerConfig: AppRouter.router,
+        routerConfig: AppRouter.createRouter(
+          authViewModel.isLoggedIn ? '/home' : '/login',
+        ),
       ),
     );
   }

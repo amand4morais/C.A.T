@@ -8,6 +8,7 @@ import '../views/available_courses_view.dart';
 import '../views/course_details_view.dart';
 import '../views/home_view.dart';
 import '../views/login_view.dart';
+import '../views/profile_view.dart';
 import '../views/register_view.dart';
 
 class AppRouter {
@@ -55,21 +56,9 @@ class AppRouter {
         GoRoute(
           path: '/profile',
           builder: (BuildContext context, GoRouterState state) =>
-              const ProfilePlaceholderView(),
+              const ProfileView(),
         ),
       ],
-    );
-  }
-}
-
-class ProfilePlaceholderView extends StatelessWidget {
-  const ProfilePlaceholderView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Perfil')),
-      body: const Center(child: Text('Perfil — em breve')),
     );
   }
 }

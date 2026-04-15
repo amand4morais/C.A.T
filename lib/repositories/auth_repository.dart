@@ -102,6 +102,48 @@ class AuthRepository {
     }
   }
 
+  User? getUserByRa(String ra) {
+    try {
+      return _users.firstWhere((user) => user.ra == ra);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> updateUser(
+    String ra, {
+    String? nome,
+    String? email,
+    String? senha,
+  }) async {
+    final index = _users.indexWhere((u) => u.ra == ra);
+    if (index == -1) return;
+    final old = _users[index];
+    _users[index] = User(
+      ra: old.ra,
+      nome: nome ?? old.nome,
+      email: email ?? old.email,
+      dataNascimento: old.dataNascimento,
+      senha: senha ?? old.senha,
+    );
+    if (ra != 'admin') {
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = _users
+          .where((u) => u.ra != 'admin')
+          .map(
+            (u) => jsonEncode({
+              'ra': u.ra,
+              'nome': u.nome,
+              'email': u.email,
+              'dataNascimento': u.dataNascimento.toIso8601String(),
+              'senha': u.senha,
+            }),
+          )
+          .toList();
+      await prefs.setStringList(_usersKey, usersJson);
+    }
+  }
+
   Future<void> saveLoggedUser(String ra) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_loggedUserKey, ra);

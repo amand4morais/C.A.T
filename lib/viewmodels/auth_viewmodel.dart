@@ -95,6 +95,7 @@ class AuthViewModel extends ChangeNotifier {
     if (ra != null) {
       _isLoggedIn = true;
       _isAdmin = await _repository.loadIsAdmin();
+      _currentUser = _repository.getUserByRa(ra);
       notifyListeners();
     }
   }
@@ -131,6 +132,32 @@ class AuthViewModel extends ChangeNotifier {
     );
     _setLoading(false);
     return ra;
+  }
+
+  Future<bool> updateProfile({String? nome, String? email}) async {
+    if (_currentUser == null) return false;
+    _setLoading(true);
+    await _repository.updateUser(
+      _currentUser!.ra,
+      nome: nome,
+      email: email,
+    );
+    _currentUser = _repository.getUserByRa(_currentUser!.ra);
+    _setLoading(false);
+    return true;
+  }
+
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    if (_currentUser == null) return false;
+    if (_currentUser!.senha != currentPassword) return false;
+    _setLoading(true);
+    await _repository.updateUser(_currentUser!.ra, senha: newPassword);
+    _currentUser = _repository.getUserByRa(_currentUser!.ra);
+    _setLoading(false);
+    return true;
   }
 
   Future<void> logout() async {

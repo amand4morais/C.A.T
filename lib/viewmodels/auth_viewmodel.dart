@@ -12,15 +12,24 @@ class AuthViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool _isLoggedIn = false;
+  bool _isAdmin = false;
   User? _currentUser;
 
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _isLoggedIn;
+  bool get isAdmin => _isAdmin;
   User? get currentUser => _currentUser;
 
   String? validateRa(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'RA é obrigatório';
+    }
+    return null;
+  }
+
+  String? validateLoginPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Senha é obrigatória';
     }
     return null;
   }
@@ -85,6 +94,7 @@ class AuthViewModel extends ChangeNotifier {
     final ra = await _repository.loadLoggedUser();
     if (ra != null) {
       _isLoggedIn = true;
+      _isAdmin = await _repository.loadIsAdmin();
       notifyListeners();
     }
   }
@@ -95,6 +105,7 @@ class AuthViewModel extends ChangeNotifier {
     if (user != null) {
       _currentUser = user;
       _isLoggedIn = true;
+      _isAdmin = _repository.isAdmin(ra);
       await _repository.saveLoggedUser(ra);
     }
     _setLoading(false);
@@ -125,6 +136,7 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> logout() async {
     _currentUser = null;
     _isLoggedIn = false;
+    _isAdmin = false;
     await _repository.clearLoggedUser();
     notifyListeners();
   }

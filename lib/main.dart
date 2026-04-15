@@ -21,6 +21,13 @@ class CatApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String initialLocation;
+    if (authViewModel.isLoggedIn) {
+      initialLocation = authViewModel.isAdmin ? '/admin-home' : '/home';
+    } else {
+      initialLocation = '/login';
+    }
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: authViewModel),
@@ -63,9 +70,7 @@ class CatApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        routerConfig: AppRouter.createRouter(
-          authViewModel.isLoggedIn ? '/home' : '/login',
-        ),
+        routerConfig: AppRouter.createRouter(initialLocation),
       ),
     );
   }

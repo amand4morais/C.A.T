@@ -3,6 +3,7 @@
 # Adicionar página de Notebooks - José 
 # Adicionar página de perfil - Amanda
 # Ajustar permanência de dados mockados - Leo
-# Ajustar permanencia de login em caso de saída do app
-# Adicionar opção de visualização de senha 
-# Geração enumerada de RA, com modal de mensagem informando após a realização do cadastro.
+# Ajustar permanencia de login em caso de saída do app - José - OK
+# Adicionar opção de visualização de senha - José - OK
+# Geração enumerada de RA, com modal de mensagem informando após a realização do cadastro. - José - OK
+# Adicionar perfil fixo de ADM, com a única opção de cadastrar cursos. - José - OK

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/course_model.dart';
+import '../views/add_course_view.dart';
+import '../views/admin_home_view.dart';
 import '../views/available_courses_view.dart';
 import '../views/course_details_view.dart';
 import '../views/home_view.dart';
@@ -27,6 +29,16 @@ class AppRouter {
           path: '/home',
           builder: (BuildContext context, GoRouterState state) =>
               const HomeView(),
+        ),
+        GoRoute(
+          path: '/admin-home',
+          builder: (BuildContext context, GoRouterState state) =>
+              const AdminHomeView(),
+        ),
+        GoRoute(
+          path: '/add-course',
+          builder: (BuildContext context, GoRouterState state) =>
+              const AddCourseView(),
         ),
         GoRoute(
           path: '/available-courses',

@@ -34,12 +34,20 @@ class CourseViewModel extends ChangeNotifier {
   void enroll(Course course) {
     final success = _repository.enroll(course);
     _enrolledCourses = _repository.getEnrolledCourses();
-    _enrollmentMessage = success ? 'Inscrição em "${course.title}" realizada com sucesso!' : 'Você já está inscrito em "${course.title}"';
+    _enrollmentMessage = success
+        ? 'Inscrição em "${course.title}" realizada com sucesso!'
+        : 'Você já está inscrito em "${course.title}"';
     notifyListeners();
   }
 
   void clearEnrollmentMessage() {
     _enrollmentMessage = null;
+    notifyListeners();
+  }
+
+  void addCourse(Course course) {
+    _repository.addCourse(course);
+    _filteredCourses = _repository.getAllCourses();
     notifyListeners();
   }
 }

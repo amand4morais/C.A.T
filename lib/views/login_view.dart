@@ -35,7 +35,7 @@ class _LoginViewState extends State<LoginView> {
 
     if (!mounted) return;
     if (success) {
-      context.go('/home');
+      context.go(viewModel.isAdmin ? '/admin-home' : '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('R.A ou senha incorretos')),
@@ -104,7 +104,7 @@ class _LoginViewState extends State<LoginView> {
                               },
                             ),
                           ),
-                          validator: viewModel.validatePassword,
+                          validator: viewModel.validateLoginPassword,
                         ),
                         const SizedBox(height: 20),
                         SizedBox(

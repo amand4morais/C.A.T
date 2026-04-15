@@ -7,6 +7,7 @@ import '../models/user_model.dart';
 class AuthRepository {
   static const String _raCounterKey = 'ra_counter';
   static const String _loggedUserKey = 'logged_user_ra';
+  static const String _isAdminKey = 'logged_user_is_admin';
   static const String _usersKey = 'users_data';
   static const int _initialRaCounter = 1000;
 
@@ -14,7 +15,17 @@ class AuthRepository {
 
   factory AuthRepository() => _instance;
 
-  AuthRepository._internal();
+  AuthRepository._internal() {
+    _users.add(
+      User(
+        ra: 'admin',
+        nome: 'Administrador',
+        email: 'admin@cat.com',
+        dataNascimento: DateTime(1990, 1, 1),
+        senha: 'admin',
+      ),
+    );
+  }
 
   final List<User> _users = [];
 
@@ -22,6 +33,15 @@ class AuthRepository {
     final prefs = await SharedPreferences.getInstance();
     final usersJson = prefs.getStringList(_usersKey) ?? [];
     _users.clear();
+    _users.add(
+      User(
+        ra: 'admin',
+        nome: 'Administrador',
+        email: 'admin@cat.com',
+        dataNascimento: DateTime(1990, 1, 1),
+        senha: 'admin',
+      ),
+    );
     for (final json in usersJson) {
       final map = jsonDecode(json) as Map<String, dynamic>;
       _users.add(
@@ -35,6 +55,8 @@ class AuthRepository {
       );
     }
   }
+
+  bool isAdmin(String ra) => ra == 'admin';
 
   Future<String> register({
     required String nome,
@@ -55,6 +77,7 @@ class AuthRepository {
     _users.add(user);
     await prefs.setInt(_raCounterKey, counter + 1);
     final usersJson = _users
+        .where((u) => u.ra != 'admin')
         .map(
           (u) => jsonEncode({
             'ra': u.ra,
@@ -82,6 +105,7 @@ class AuthRepository {
   Future<void> saveLoggedUser(String ra) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_loggedUserKey, ra);
+    await prefs.setBool(_isAdminKey, isAdmin(ra));
   }
 
   Future<String?> loadLoggedUser() async {
@@ -89,8 +113,14 @@ class AuthRepository {
     return prefs.getString(_loggedUserKey);
   }
 
+  Future<bool> loadIsAdmin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isAdminKey) ?? false;
+  }
+
   Future<void> clearLoggedUser() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_loggedUserKey);
+    await prefs.remove(_isAdminKey);
   }
 }

@@ -174,9 +174,9 @@ Realize o cadastro pela tela de registro. O R.A é gerado automaticamente pelo s
 
 | Integrante | Atividades desenvolvidas |
 |---|---|
-| Amanda Morais Ribeiro | x |
-| José Ernesto Marra Filho | x |
-| Leonardo Bonfanti | x |
+| Amanda Morais Ribeiro | Página inicial, detalhes de curso, adiquirir curso, página de perfil e README |
+| José Ernesto Marra Filho | Estrutura MVVM, verificação de login, perfil de admin, cadastro de cursos, correção de erros |
+| Leonardo Bonfanti | Rotas, telas de login/cadastro, filtro de cursos, exclusão e edição de cursos |
 
 ### Particularidades e Observações
 

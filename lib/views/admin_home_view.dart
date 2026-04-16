@@ -10,6 +10,48 @@ import '../widgets/course_card.dart';
 class AdminHomeView extends StatelessWidget {
   const AdminHomeView({super.key});
 
+  Future<void> _confirmDelete(
+    BuildContext context,
+    CourseViewModel viewModel,
+    Course course,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remover curso'),
+        content: Text('Deseja remover o curso "${course.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final success = viewModel.removeCourse(course.id);
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'Curso "${course.title}" removido com sucesso!'
+              : 'Não foi possível remover o curso.',
+        ),
+        backgroundColor: success
+            ? const Color(0xFF6A1B9A)
+            : Colors.red.shade700,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,7 +67,10 @@ class AdminHomeView extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () => context.push('/add-course'),
-            icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
+            icon: const Icon(
+              Icons.add_circle_outline_rounded,
+              color: Colors.white,
+            ),
             tooltip: 'Cadastrar novo curso',
           ),
           const SizedBox(width: 4),
@@ -128,17 +173,52 @@ class AdminHomeView extends StatelessWidget {
                     itemCount: courses.length,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.9,
-                    ),
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.9,
+                        ),
                     itemBuilder: (context, index) {
                       final Course course = courses[index];
-                      return CourseCard(
-                        course: course,
-                        onTap: () =>
-                            context.push('/course-details', extra: course),
+                      return Stack(
+                        children: [
+                          Positioned.fill(
+                            child: CourseCard(
+                              course: course,
+                              onTap: () => context.push(
+                                '/course-details',
+                                extra: course,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: PopupMenuButton<String>(
+                              tooltip: 'Ações do curso',
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  context.push('/edit-course', extra: course);
+                                  return;
+                                }
+                                if (value == 'delete') {
+                                  _confirmDelete(context, viewModel, course);
+                                }
+                              },
+                              itemBuilder: (_) => const [
+                                PopupMenuItem<String>(
+                                  value: 'edit',
+                                  child: Text('Editar'),
+                                ),
+                                PopupMenuItem<String>(
+                                  value: 'delete',
+                                  child: Text('Remover'),
+                                ),
+                              ],
+                              icon: const Icon(Icons.more_vert_rounded),
+                            ),
+                          ),
+                        ],
                       );
                     },
                   ),

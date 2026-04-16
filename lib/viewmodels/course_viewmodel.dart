@@ -19,6 +19,14 @@ class CourseViewModel extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   String? get enrollmentMessage => _enrollmentMessage;
 
+  void _refreshFilteredCourses() {
+    if (_searchQuery.trim().isEmpty) {
+      _filteredCourses = _repository.getAllCourses();
+      return;
+    }
+    _filteredCourses = _repository.searchCourses(_searchQuery);
+  }
+
   void search(String query) {
     _searchQuery = query;
     _filteredCourses = _repository.searchCourses(query);
@@ -47,7 +55,25 @@ class CourseViewModel extends ChangeNotifier {
 
   void addCourse(Course course) {
     _repository.addCourse(course);
-    _filteredCourses = _repository.getAllCourses();
+    _refreshFilteredCourses();
     notifyListeners();
+  }
+
+  bool updateCourse(Course course) {
+    final success = _repository.updateCourse(course);
+    if (!success) return false;
+    _enrolledCourses = _repository.getEnrolledCourses();
+    _refreshFilteredCourses();
+    notifyListeners();
+    return true;
+  }
+
+  bool removeCourse(String courseId) {
+    final success = _repository.removeCourse(courseId);
+    if (!success) return false;
+    _enrolledCourses = _repository.getEnrolledCourses();
+    _refreshFilteredCourses();
+    notifyListeners();
+    return true;
   }
 }

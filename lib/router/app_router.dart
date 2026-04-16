@@ -42,6 +42,13 @@ class AppRouter {
               const AddCourseView(),
         ),
         GoRoute(
+          path: '/edit-course',
+          builder: (BuildContext context, GoRouterState state) {
+            final Course course = state.extra! as Course;
+            return AddCourseView(courseToEdit: course);
+          },
+        ),
+        GoRoute(
           path: '/available-courses',
           builder: (BuildContext context, GoRouterState state) =>
               const AvailableCoursesView(),

@@ -5,7 +5,9 @@ import '../models/course_model.dart';
 import '../viewmodels/course_viewmodel.dart';
 
 class AddCourseView extends StatefulWidget {
-  const AddCourseView({super.key});
+  final Course? courseToEdit;
+
+  const AddCourseView({super.key, this.courseToEdit});
 
   @override
   State<AddCourseView> createState() => _AddCourseViewState();
@@ -15,6 +17,18 @@ class _AddCourseViewState extends State<AddCourseView> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+
+  bool get _isEditing => widget.courseToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final course = widget.courseToEdit;
+    if (course != null) {
+      _titleController.text = course.title;
+      _descriptionController.text = course.description;
+    }
+  }
 
   @override
   void dispose() {
@@ -41,19 +55,44 @@ class _AddCourseViewState extends State<AddCourseView> {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
-    final course = Course(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-    );
+    final String title = _titleController.text.trim();
+    final String description = _descriptionController.text.trim();
 
-    viewModel.addCourse(course);
+    late final String snackBarMessage;
+    if (_isEditing) {
+      final existing = widget.courseToEdit!;
+      final updatedCourse = Course(
+        id: existing.id,
+        title: title,
+        description: description,
+      );
+      final success = viewModel.updateCourse(updatedCourse);
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível atualizar o curso.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      snackBarMessage =
+          'Curso "${updatedCourse.title}" atualizado com sucesso!';
+    } else {
+      final newCourse = Course(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
+        description: description,
+      );
+      viewModel.addCourse(newCourse);
+      snackBarMessage = 'Curso "${newCourse.title}" cadastrado com sucesso!';
+    }
 
     if (!mounted) return;
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Curso "${course.title}" cadastrado com sucesso!'),
+        content: Text(snackBarMessage),
         backgroundColor: const Color(0xFF6A1B9A),
       ),
     );
@@ -67,8 +106,8 @@ class _AddCourseViewState extends State<AddCourseView> {
         backgroundColor: const Color(0xFF6A1B9A),
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'Cadastrar Curso',
+        title: Text(
+          _isEditing ? 'Editar Curso' : 'Cadastrar Curso',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
@@ -142,8 +181,8 @@ class _AddCourseViewState extends State<AddCourseView> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Cadastrar Curso',
+                    child: Text(
+                      _isEditing ? 'Salvar Alterações' : 'Cadastrar Curso',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),

@@ -53,14 +53,43 @@ class CourseRepository {
     _avaliableCourses.add(course);
   }
 
+  bool updateCourse(Course updatedCourse) {
+    final index = _avaliableCourses.indexWhere(
+      (course) => course.id == updatedCourse.id,
+    );
+    if (index == -1) return false;
+
+    _avaliableCourses[index] = updatedCourse;
+
+    final enrolledIndex = _enrolledCourses.indexWhere(
+      (course) => course.id == updatedCourse.id,
+    );
+    if (enrolledIndex != -1) {
+      _enrolledCourses[enrolledIndex] = updatedCourse;
+    }
+
+    return true;
+  }
+
+  bool removeCourse(String courseId) {
+    final previousLength = _avaliableCourses.length;
+    _avaliableCourses.removeWhere((course) => course.id == courseId);
+    final removed = _avaliableCourses.length < previousLength;
+    if (!removed) return false;
+    _enrolledCourses.removeWhere((course) => course.id == courseId);
+    return true;
+  }
+
   List<Course> searchCourses(String query) {
     if (query.trim().isEmpty) return getAllCourses();
     final lower = query.toLowerCase();
-    return _avaliableCourses.where(
-      (course) =>
-          course.title.toLowerCase().contains(lower) ||
-          course.description.toLowerCase().contains(lower),
-    ).toList();
+    return _avaliableCourses
+        .where(
+          (course) =>
+              course.title.toLowerCase().contains(lower) ||
+              course.description.toLowerCase().contains(lower),
+        )
+        .toList();
   }
 
   bool enroll(Course course) {

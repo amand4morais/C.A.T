@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import '../models/course_model.dart';
+import '../models/user_model.dart';
 import '../repositories/course_repository.dart';
+import 'auth_viewmodel.dart';
 
 class CourseViewModel extends ChangeNotifier {
   final CourseRepository _repository = CourseRepository();
+  User? _currentUser;
   List<Course> _filteredCourses = [];
   List<Course> _enrolledCourses = [];
   String _searchQuery = '';
@@ -75,5 +78,10 @@ class CourseViewModel extends ChangeNotifier {
     _refreshFilteredCourses();
     notifyListeners();
     return true;
+  }
+
+  void updateAuth(AuthViewModel authViewModel) {
+    _currentUser = authViewModel.currentUser;
+    notifyListeners();
   }
 }

@@ -95,22 +95,29 @@ class AuthViewModel extends ChangeNotifier {
     if (ra != null) {
       _isLoggedIn = true;
       _isAdmin = await _repository.loadIsAdmin();
-      _currentUser = _repository.getUserByRa(ra);
+      _currentUser = await _repository.getUserByRa(ra);
       notifyListeners();
     }
   }
 
   Future<bool> loginUser(String ra, String password) async {
     _setLoading(true);
-    final user = _repository.login(ra, password);
-    if (user != null) {
-      _currentUser = user;
-      _isLoggedIn = true;
-      _isAdmin = _repository.isAdmin(ra);
-      await _repository.saveLoggedUser(ra);
+    try {
+      final user = await _repository.login(ra, password);
+      if (user != null) {
+        _currentUser = user;
+        _isLoggedIn = true;
+        _isAdmin = _repository.isAdmin(ra);
+        await _repository.saveLoggedUser(ra);
+        _setLoading(false);
+        return true;
+      }
+      _setLoading(false);
+      return false;
+    } catch (_) {
+      _setLoading(false);
+      return false;
     }
-    _setLoading(false);
-    return user != null;
   }
 
   Future<String?> registerUser({
@@ -137,14 +144,19 @@ class AuthViewModel extends ChangeNotifier {
   Future<bool> updateProfile({String? nome, String? email}) async {
     if (_currentUser == null) return false;
     _setLoading(true);
-    await _repository.updateUser(
-      _currentUser!.ra,
-      nome: nome,
-      email: email,
-    );
-    _currentUser = _repository.getUserByRa(_currentUser!.ra);
-    _setLoading(false);
-    return true;
+    try {
+      await _repository.updateUser(
+        _currentUser!.ra,
+        nome: nome,
+        email: email,
+      );
+      _currentUser = await _repository.getUserByRa(_currentUser!.ra);
+      _setLoading(false);
+      return true;
+    } catch (_) {
+      _setLoading(false);
+      return false;
+    }
   }
 
   Future<bool> changePassword(
@@ -154,10 +166,15 @@ class AuthViewModel extends ChangeNotifier {
     if (_currentUser == null) return false;
     if (_currentUser!.senha != currentPassword) return false;
     _setLoading(true);
-    await _repository.updateUser(_currentUser!.ra, senha: newPassword);
-    _currentUser = _repository.getUserByRa(_currentUser!.ra);
-    _setLoading(false);
-    return true;
+    try {
+      await _repository.updateUser(_currentUser!.ra, senha: newPassword);
+      _currentUser = await _repository.getUserByRa(_currentUser!.ra);
+      _setLoading(false);
+      return true;
+    } catch (_) {
+      _setLoading(false);
+      return false;
+    }
   }
 
   Future<void> logout() async {

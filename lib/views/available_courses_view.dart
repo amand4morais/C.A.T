@@ -21,17 +21,19 @@ class _AvailableCoursesViewState extends State<AvailableCoursesView> {
     super.dispose();
   }
 
-  void _openCourseModal(BuildContext context, Course course, bool alreadyEnrolled) {
+  void _openCourseModal(
+    BuildContext context,
+    Course course,
+    bool alreadyEnrolled,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => CourseDetailsModal(
-        course: course,
-        alreadyEnrolled: alreadyEnrolled,
-      ),
+      builder: (_) =>
+          CourseDetailsModal(course: course, alreadyEnrolled: alreadyEnrolled),
     );
   }
 
@@ -98,9 +100,24 @@ class _AvailableCoursesViewState extends State<AvailableCoursesView> {
               },
             ),
           ),
+
           Expanded(
             child: Consumer<CourseViewModel>(
               builder: (context, viewModel, _) {
+                // 1. Estado de carregamento
+                if (viewModel.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF1976D2)),
+                  );
+                }
+
+                if (viewModel.errorMessage != null) {
+                  return _ErrorState(
+                    message: viewModel.errorMessage!,
+                    onRetry: viewModel.loadCourses,
+                  );
+                }
+
                 final List<Course> courses = viewModel.filteredCourses;
                 final List<Course> enrolled = viewModel.enrolledCourses;
 
@@ -138,8 +155,9 @@ class _AvailableCoursesViewState extends State<AvailableCoursesView> {
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final Course course = courses[index];
-                    final bool alreadyEnrolled =
-                        enrolled.any((c) => c.id == course.id);
+                    final bool alreadyEnrolled = enrolled.any(
+                      (c) => c.id == course.id,
+                    );
 
                     return Material(
                       color: Colors.white,
@@ -163,8 +181,9 @@ class _AvailableCoursesViewState extends State<AvailableCoursesView> {
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF1976D2).withOpacity(0.1),
+                                  color: const Color(
+                                    0xFF1976D2,
+                                  ).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Icon(
@@ -239,6 +258,55 @@ class _AvailableCoursesViewState extends State<AvailableCoursesView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey.shade500,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Tentar novamente'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF1976D2),
+                side: const BorderSide(color: Color(0xFF1976D2)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

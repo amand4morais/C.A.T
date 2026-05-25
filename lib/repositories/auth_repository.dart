@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/user_model.dart';
+import '../models/user_model.dart' as app_models;
 
 class AuthRepository {
   static const String _raCounterKey = 'ra_counter';
@@ -32,7 +32,7 @@ class AuthRepository {
       'ra': ra,
       'nome': nome,
       'email': email,
-      'dataNascimento': dataNascimento.toIso8601String(),
+      'data_nascimento': dataNascimento.toIso8601String(),
       'senha': senha,
       'role': 'aluno',
     });
@@ -40,7 +40,7 @@ class AuthRepository {
     return ra;
   }
 
-  Future<User?> login(String ra, String password) async {
+  Future<app_models.User?> login(String ra, String password) async {
     final response = await Supabase.instance.client
         .from('profiles')
         .select()
@@ -51,7 +51,7 @@ class AuthRepository {
     return _mapToUser(response);
   }
 
-  Future<User?> getUserByRa(String ra) async {
+  Future<app_models.User?> getUserByRa(String ra) async {
     final response = await Supabase.instance.client
         .from('profiles')
         .select()
@@ -72,10 +72,7 @@ class AuthRepository {
     if (email != null) data['email'] = email;
     if (senha != null) data['senha'] = senha;
     if (data.isEmpty) return;
-    await Supabase.instance.client
-        .from('profiles')
-        .update(data)
-        .eq('ra', ra);
+    await Supabase.instance.client.from('profiles').update(data).eq('ra', ra);
   }
 
   Future<void> saveLoggedUser(String ra) async {
@@ -100,12 +97,12 @@ class AuthRepository {
     await prefs.remove(_isAdminKey);
   }
 
-  User _mapToUser(Map<String, dynamic> map) {
-    return User(
+  app_models.User _mapToUser(Map<String, dynamic> map) {
+    return app_models.User(
       ra: map['ra'] as String,
       nome: map['nome'] as String,
       email: map['email'] as String,
-      dataNascimento: DateTime.parse(map['dataNascimento'] as String),
+      dataNascimento: DateTime.parse(map['data_nascimento'] as String),
       senha: map['senha'] as String,
     );
   }

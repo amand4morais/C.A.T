@@ -5,12 +5,14 @@ import '../repositories/course_repository.dart';
 class CourseViewModel extends ChangeNotifier {
   final CourseRepository _repository = CourseRepository();
 
+  List<Course> _allCourses = [];
   List<Course> _filteredCourses = [];
   List<Course> _enrolledCourses = [];
   String _searchQuery = '';
   String? _enrollmentMessage;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _currentRa;
 
   List<Course> get filteredCourses => _filteredCourses;
   List<Course> get enrolledCourses => _enrolledCourses;
@@ -27,9 +29,11 @@ class CourseViewModel extends ChangeNotifier {
     _setLoading(true);
     _errorMessage = null;
     try {
-      await Future.delayed(const Duration(milliseconds: 600));
-      _filteredCourses = _repository.getAllCourses();
-      _enrolledCourses = _repository.getEnrolledCourses();
+      _allCourses = await _repository.getAllCourses();
+      _applyFilter();
+      if (_currentRa != null) {
+        _enrolledCourses = await _repository.getEnrolledCourses(_currentRa!);
+      }
     } catch (e) {
       _errorMessage = 'Não foi possível carregar os cursos. Tente novamente.';
     } finally {
@@ -37,25 +41,59 @@ class CourseViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> setCurrentUser(String ra) async {
+    _currentRa = ra;
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      _enrolledCourses = await _repository.getEnrolledCourses(ra);
+    } catch (e) {
+      _errorMessage = 'Não foi possível carregar suas inscrições.';
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  void clearCurrentUser() {
+    _currentRa = null;
+    _enrolledCourses = [];
+    notifyListeners();
+  }
+
   void search(String query) {
     _searchQuery = query;
-    _filteredCourses = _repository.searchCourses(query);
+    _applyFilter();
     notifyListeners();
   }
 
   void clearSearch() {
     _searchQuery = '';
-    _filteredCourses = _repository.getAllCourses();
+    _applyFilter();
     notifyListeners();
   }
 
+  void _applyFilter() {
+    if (_searchQuery.trim().isEmpty) {
+      _filteredCourses = List.of(_allCourses);
+      return;
+    }
+    final lower = _searchQuery.toLowerCase();
+    _filteredCourses = _allCourses
+        .where(
+          (c) =>
+              c.title.toLowerCase().contains(lower) ||
+              c.description.toLowerCase().contains(lower),
+        )
+        .toList();
+  }
+
   Future<void> enroll(Course course) async {
+    if (_currentRa == null) return;
     _setLoading(true);
     _errorMessage = null;
     try {
-      await Future.delayed(const Duration(milliseconds: 400));
-      final success = _repository.enroll(course);
-      _enrolledCourses = _repository.getEnrolledCourses();
+      final success = await _repository.enroll(_currentRa!, course);
+      _enrolledCourses = await _repository.getEnrolledCourses(_currentRa!);
       _enrollmentMessage = success
           ? 'Inscrição em "${course.title}" realizada com sucesso!'
           : 'Você já está inscrito em "${course.title}"';
@@ -75,9 +113,8 @@ class CourseViewModel extends ChangeNotifier {
     _setLoading(true);
     _errorMessage = null;
     try {
-      await Future.delayed(const Duration(milliseconds: 400));
-      _repository.addCourse(course);
-      _refreshFilteredCourses();
+      await _repository.addCourse(course);
+      await _reloadAll();
     } catch (e) {
       _errorMessage = 'Erro ao cadastrar curso. Tente novamente.';
     } finally {
@@ -89,12 +126,8 @@ class CourseViewModel extends ChangeNotifier {
     _setLoading(true);
     _errorMessage = null;
     try {
-      await Future.delayed(const Duration(milliseconds: 400));
-      final success = _repository.updateCourse(course);
-      if (success) {
-        _enrolledCourses = _repository.getEnrolledCourses();
-        _refreshFilteredCourses();
-      }
+      final success = await _repository.updateCourse(course);
+      if (success) await _reloadAll();
       return success;
     } catch (e) {
       _errorMessage = 'Erro ao atualizar curso. Tente novamente.';
@@ -108,12 +141,8 @@ class CourseViewModel extends ChangeNotifier {
     _setLoading(true);
     _errorMessage = null;
     try {
-      await Future.delayed(const Duration(milliseconds: 400));
-      final success = _repository.removeCourse(courseId);
-      if (success) {
-        _enrolledCourses = _repository.getEnrolledCourses();
-        _refreshFilteredCourses();
-      }
+      final success = await _repository.removeCourse(courseId);
+      if (success) await _reloadAll();
       return success;
     } catch (e) {
       _errorMessage = 'Erro ao remover curso. Tente novamente.';
@@ -123,10 +152,12 @@ class CourseViewModel extends ChangeNotifier {
     }
   }
 
-  void _refreshFilteredCourses() {
-    _filteredCourses = _searchQuery.trim().isEmpty
-        ? _repository.getAllCourses()
-        : _repository.searchCourses(_searchQuery);
+  Future<void> _reloadAll() async {
+    _allCourses = await _repository.getAllCourses();
+    _applyFilter();
+    if (_currentRa != null) {
+      _enrolledCourses = await _repository.getEnrolledCourses(_currentRa!);
+    }
   }
 
   void _setLoading(bool value) {

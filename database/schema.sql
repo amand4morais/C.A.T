@@ -2,6 +2,7 @@ CREATE TABLE profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ra TEXT UNIQUE NOT NULL,
   nome TEXT NOT NULL,
+  data_nascimento TEXT NOT NULL,
   email TEXT NOT NULL,
   senha TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'aluno'

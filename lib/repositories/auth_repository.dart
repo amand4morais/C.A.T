@@ -99,11 +99,13 @@ class AuthRepository {
 
   app_models.User _mapToUser(Map<String, dynamic> map) {
     return app_models.User(
-      ra: map['ra'] as String,
-      nome: map['nome'] as String,
-      email: map['email'] as String,
-      dataNascimento: DateTime.parse(map['data_nascimento'] as String),
-      senha: map['senha'] as String,
+      ra: map['ra']?.toString() ?? '',
+      nome: map['nome']?.toString() ?? '',
+      email: map['email']?.toString() ?? '',
+      dataNascimento: map['data_nascimento'] != null
+          ? DateTime.parse(map['data_nascimento'].toString())
+          : DateTime(1900),
+      senha: map['senha']?.toString() ?? '',
     );
   }
 }

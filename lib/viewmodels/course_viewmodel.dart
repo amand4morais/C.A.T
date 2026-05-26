@@ -41,23 +41,26 @@ class CourseViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> setCurrentUser(String ra) async {
-    _currentRa = ra;
-    _setLoading(true);
-    _errorMessage = null;
-    try {
-      _enrolledCourses = await _repository.getEnrolledCourses(ra);
-    } catch (e) {
-      _errorMessage = 'Não foi possível carregar suas inscrições.';
-    } finally {
-      _setLoading(false);
+  void updateAuth(String? ra) {
+    if (_currentRa != ra) {
+      _currentRa = ra;
+      if (ra != null) {
+        _loadEnrolledCoursesForCurrentUser();
+      } else {
+        _enrolledCourses = [];
+        notifyListeners();
+      }
     }
   }
 
-  void clearCurrentUser() {
-    _currentRa = null;
-    _enrolledCourses = [];
-    notifyListeners();
+  Future<void> _loadEnrolledCoursesForCurrentUser() async {
+    try {
+      _enrolledCourses = await _repository.getEnrolledCourses(_currentRa!);
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Não foi possível carregar suas inscrições.';
+      notifyListeners();
+    }
   }
 
   void search(String query) {
@@ -109,14 +112,23 @@ class CourseViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addCourse(Course course) async {
+  Future<bool> addCourse(Course course) async {
     _setLoading(true);
     _errorMessage = null;
     try {
-      await _repository.addCourse(course);
+      final success = await _repository.addCourse(course);
+      if (!success) {
+        _errorMessage = 'Erro ao cadastrar curso. Tente novamente.';
+        return false;
+      }
       await _reloadAll();
+      return true;
     } catch (e) {
+      if (kDebugMode) {
+        print('🚨 ERRO EXPLOSIVO NO CADASTRO DE CURSO: $e');
+      }
       _errorMessage = 'Erro ao cadastrar curso. Tente novamente.';
+      return false;
     } finally {
       _setLoading(false);
     }

@@ -114,7 +114,10 @@ class AuthViewModel extends ChangeNotifier {
       }
       _setLoading(false);
       return false;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro na autenticação: $e');
+      }
       _setLoading(false);
       return false;
     }
@@ -127,18 +130,26 @@ class AuthViewModel extends ChangeNotifier {
     required String password,
   }) async {
     _setLoading(true);
-    final parts = birthDate.split('/');
-    final day = int.parse(parts[0]);
-    final month = int.parse(parts[1]);
-    final year = int.parse(parts[2]);
-    final ra = await _repository.register(
-      nome: fullName,
-      email: email,
-      dataNascimento: DateTime(year, month, day),
-      senha: password,
-    );
-    _setLoading(false);
-    return ra;
+    try {
+      final parts = birthDate.split('/');
+      final day = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final year = int.parse(parts[2]);
+      final ra = await _repository.register(
+        nome: fullName,
+        email: email,
+        dataNascimento: DateTime(year, month, day),
+        senha: password,
+      );
+      return ra;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro no repositório ao registrar usuário: $e');
+      }
+      return null;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<bool> updateProfile({String? nome, String? email}) async {

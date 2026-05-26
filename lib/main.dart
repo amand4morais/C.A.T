@@ -38,7 +38,10 @@ class CatApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: authViewModel),
-        ChangeNotifierProvider(create: (_) => CourseViewModel()),
+        ChangeNotifierProxyProvider<AuthViewModel, CourseViewModel>(
+          create: (_) => CourseViewModel(),
+          update: (_, auth, course) => course!..updateAuth(auth.currentUser?.ra),
+        ),
       ],
       child: MaterialApp.router(
         title: 'CAT Cursos',

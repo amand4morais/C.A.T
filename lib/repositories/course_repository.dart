@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/course_model.dart';
@@ -48,12 +49,14 @@ class CourseRepository {
   Future<bool> addCourse(Course course) async {
     try {
       await Supabase.instance.client.from('courses').insert({
-        'id': course.id,
         'title': course.title,
         'description': course.description,
       });
       return true;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao inserir curso no repositório: $e');
+      }
       return false;
     }
   }

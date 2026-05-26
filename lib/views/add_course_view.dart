@@ -88,13 +88,15 @@ class _AddCourseViewState extends State<AddCourseView> {
         title: title,
         description: description,
       );
-      await viewModel.addCourse(newCourse);
+      final success = await viewModel.addCourse(newCourse);
       if (!mounted) return;
 
-      if (viewModel.errorMessage != null) {
+      if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(viewModel.errorMessage!),
+            content: Text(
+              viewModel.errorMessage ?? 'Não foi possível cadastrar o curso.',
+            ),
             backgroundColor: Colors.red,
           ),
         );

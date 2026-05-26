@@ -51,6 +51,14 @@ Model  →  Repository  →  ViewModel  →  View
 
 A navegação é gerenciada pelo GoRouter, com rota inicial dinâmica definida no `main()` com base no estado de login persistido.
 
+### Entrega 2 — Integração com Nuvem (Supabase)
+
+Na segunda entrega, os repositórios migraram de persistência local para o Supabase (PostgreSQL na nuvem):
+
+- **AuthRepository:** mantém `SharedPreferences` apenas para sessão local (R.A logado); todos os dados de utilizadores residem na tabela `profiles` do Supabase
+- **CourseRepository:** todas as operações de leitura, inserção, atualização e remoção de cursos comunicam diretamente com as tabelas `courses` e `enrollments` do Supabase
+- As chaves de acesso são carregadas via `flutter_dotenv` a partir do ficheiro `.env` na raiz do projeto
+
 ---
 
 ## Estrutura de Pastas
@@ -132,13 +140,39 @@ flutter run -d <device-id>
 flutter run --release
 ```
 
+### Entrega 2 — Configuração do Supabase
+
+#### 5. Criar projeto no Supabase
+Acesse [supabase.com](https://supabase.com), crie um novo projeto e anote a **Project URL** e a **anon public key** (em **Settings → API**).
+
+#### 6. Executar o schema do banco de dados
+No painel do Supabase, acesse **SQL Editor** e execute o conteúdo completo do ficheiro `database/schema.sql`. Isso criará as tabelas `profiles`, `courses` e `enrollments`, desativará o RLS e inserirá o administrador padrão.
+
+#### 7. Configurar as chaves de acesso
+Crie um ficheiro `.env` na raiz do projeto com o seguinte conteúdo:
+
+```
+SUPABASE_URL=https://<seu-projeto>.supabase.co
+SUPABASE_ANON_KEY=<sua-anon-key>
+```
+
+As chaves são lidas em `lib/main.dart` via `flutter_dotenv`.
+
+#### 8. Gerar o APK para produção
+```bash
+flutter build apk --release
+```
+O APK gerado estará em `build/app/outputs/flutter-apk/app-release.apk`.
+
 ### Dependências principais
 
 | Pacote | Versão | Finalidade |
 |---|---|---|
 | provider | ^6.1.2 | Gerenciamento de estado |
 | go_router | ^14.x | Navegação declarativa |
-| shared_preferences | ^2.x | Persistência de sessão e usuários |
+| shared_preferences | ^2.x | Persistência de sessão local |
+| supabase_flutter | ^2.x | Integração com banco de dados Supabase (Entrega 2) |
+| flutter_dotenv | ^5.x | Carregamento de variáveis de ambiente via `.env` (Entrega 2) |
 
 As versões exatas estão registradas no `pubspec.lock`.
 
@@ -181,20 +215,22 @@ Realize o cadastro pela tela de registro. O R.A é gerado automaticamente pelo s
 
 ### Divisão de Atividades
 
-| Integrante | Atividades desenvolvidas |
-|---|---|
-| Amanda Morais Ribeiro | Página inicial, detalhes de curso, adiquirir curso, página de perfil e README |
-| José Ernesto Marra Filho | Estrutura MVVM, verificação de login, perfil de admin, cadastro de cursos, correção de erros |
-| Leonardo Bonfanti | Rotas, telas de login/cadastro, filtro de cursos, exclusão e edição de cursos |
+| Integrante | Entrega 1 | Entrega 2 |
+|---|---|---|
+| Amanda Morais Ribeiro | Página inicial, detalhes de curso, adquirir curso, página de perfil e README | CRUD de cursos, refatoração da autenticação |
+| José Ernesto Marra Filho | Estrutura MVVM, verificação de login, perfil de admin, cadastro de cursos, correção de erros | Criação do banco de dados no Supabase, integração das chaves via `.env`, injeção de dependências, correções e refinamentos finais |
+| Leonardo Bonfanti | Rotas, telas de login/cadastro, filtro de cursos, exclusão e edição de cursos | Adição do campo `data_nascimento`, melhorias nas views e correção de erros de funcionalidade |
 
 ### Particularidades e Observações
 
 **Autenticação**
-A autenticação não utiliza tokens nem criptografia de senha. As senhas são armazenadas em texto puro no SharedPreferences, o que é adequado apenas para fins acadêmicos e de demonstração.
+A autenticação não utiliza tokens nem criptografia de senha. As senhas são armazenadas em texto puro na tabela `profiles` do Supabase, o que é adequado apenas para fins acadêmicos e de demonstração.
 
 **Conta administrador**
-As credenciais do administrador (admin / admin) são fixas e definidas diretamente no código (`AuthRepository`). Não há interface para criação ou alteração de contas administrativas.
+As credenciais do administrador (`admin` / `admin`) são inseridas diretamente no banco de dados via `database/schema.sql`. O reconhecimento do perfil admin é feito verificando se o R.A é igual a `'admin'` no `AuthRepository`. Não há interface para criação ou alteração de contas administrativas.
+
+**Row Level Security (RLS)**
+O RLS foi desativado em todas as tabelas do Supabase (`ALTER TABLE ... DISABLE ROW LEVEL SECURITY`) para simplificar o acesso durante o desenvolvimento académico. Em ambiente de produção real, políticas de RLS adequadas deveriam ser configuradas.
 
 **Funcionalidades não implementadas**
 - Cancelamento de inscrição em curso
-- Persistência de inscrições entre sessões

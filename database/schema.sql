@@ -8,11 +8,15 @@ CREATE TABLE profiles (
   role TEXT NOT NULL DEFAULT 'aluno'
 );
 
+ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
+
 CREATE TABLE courses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT NOT NULL
 );
+
+ALTER TABLE courses DISABLE ROW LEVEL SECURITY;
 
 CREATE TABLE enrollments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,5 +24,7 @@ CREATE TABLE enrollments (
   course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE
 );
 
-INSERT INTO profiles (ra, nome, email, senha, role)
-VALUES ('admin', 'Administrador', 'admin@cat.com', 'admin', 'admin');
+ALTER TABLE enrollments DISABLE ROW LEVEL SECURITY;
+
+INSERT INTO profiles (ra, nome, email, senha, data_nascimento, role)
+VALUES ('admin', 'Administrador do Sistema', 'admin@cat.com', 'admin', '2000-01-01', 'admin');

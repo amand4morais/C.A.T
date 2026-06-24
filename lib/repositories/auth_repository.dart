@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -66,11 +68,23 @@ class AuthRepository {
     String? nome,
     String? email,
     String? senha,
+    String? fotoUrl,
+    String? cep,
+    String? logradouro,
+    String? bairro,
+    String? localidade,
+    String? uf,
   }) async {
     final Map<String, dynamic> data = {};
     if (nome != null) data['nome'] = nome;
     if (email != null) data['email'] = email;
     if (senha != null) data['senha'] = senha;
+    if (fotoUrl != null) data['foto_url'] = fotoUrl;
+    if (cep != null) data['cep'] = cep;
+    if (logradouro != null) data['logradouro'] = logradouro;
+    if (bairro != null) data['bairro'] = bairro;
+    if (localidade != null) data['localidade'] = localidade;
+    if (uf != null) data['uf'] = uf;
     if (data.isEmpty) return;
     await Supabase.instance.client.from('profiles').update(data).eq('ra', ra);
   }
@@ -106,6 +120,31 @@ class AuthRepository {
           ? DateTime.parse(map['data_nascimento'].toString())
           : DateTime(1900),
       senha: map['senha']?.toString() ?? '',
+      fotoUrl: map['foto_url']?.toString(),
+      cep: map['cep']?.toString(),
+      logradouro: map['logradouro']?.toString(),
+      bairro: map['bairro']?.toString(),
+      localidade: map['localidade']?.toString(),
+      uf: map['uf']?.toString(),
     );
+  }
+
+  Future<String?> uploadProfilePicture(
+    String ra,
+    Uint8List fileBytes,
+    String fileName,
+  ) async {
+    try {
+      final path = '$ra/$fileName';
+      await Supabase.instance.client.storage
+          .from('avatars')
+          .uploadBinary(path, fileBytes, fileOptions: const FileOptions(upsert: true));
+      final publicUrl = Supabase.instance.client.storage
+          .from('avatars')
+          .getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      return null;
+    }
   }
 }

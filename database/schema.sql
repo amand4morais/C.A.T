@@ -5,7 +5,13 @@ CREATE TABLE profiles (
   data_nascimento TEXT NOT NULL,
   email TEXT NOT NULL,
   senha TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'aluno'
+  role TEXT NOT NULL DEFAULT 'aluno',
+  foto_url text,
+  cep text,
+  logradouro text,
+  bairro text,
+  localidade text,
+  uf text
 );
 
 ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
@@ -28,3 +34,6 @@ ALTER TABLE enrollments DISABLE ROW LEVEL SECURITY;
 
 INSERT INTO profiles (ra, nome, email, senha, data_nascimento, role)
 VALUES ('admin', 'Administrador do Sistema', 'admin@cat.com', 'admin', '2000-01-01', 'admin');
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true);

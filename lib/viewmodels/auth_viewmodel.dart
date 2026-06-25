@@ -233,37 +233,6 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Address?> fetchCep(String cep) async {
-    try {
-      return await _repository.fetchCep(cep);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<bool> updateProfileImage(ImageSource source) async {
-    if (_currentUser == null) return false;
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, imageQuality: 70);
-    if (picked == null) return false;
-    _setLoading(true);
-    try {
-      final bytes = await picked.readAsBytes();
-      final url = await _repository.uploadProfileImage(
-        _currentUser!.ra,
-        bytes,
-        picked.name,
-      );
-      await _repository.updateUser(_currentUser!.ra, fotoUrl: url);
-      _currentUser = await _repository.getUserByRa(_currentUser!.ra);
-      _setLoading(false);
-      return true;
-    } catch (_) {
-      _setLoading(false);
-      return false;
-    }
-  }
-
   Future<bool> changePassword(
     String currentPassword,
     String newPassword,

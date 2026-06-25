@@ -1,15 +1,7 @@
-<<<<<<< HEAD
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:http/http.dart' as http;
-=======
 import 'package:flutter/foundation.dart';
->>>>>>> part3
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/address_model.dart';
 import '../models/user_model.dart' as app_models;
 
 class AuthRepository {
@@ -70,73 +62,25 @@ class AuthRepository {
     String? nome,
     String? email,
     String? senha,
-<<<<<<< HEAD
-=======
     String? fotoUrl,
->>>>>>> part3
     String? cep,
     String? logradouro,
     String? bairro,
     String? localidade,
     String? uf,
-<<<<<<< HEAD
-    String? fotoUrl,
-=======
->>>>>>> part3
   }) async {
     final Map<String, dynamic> data = {};
     if (nome != null) data['nome'] = nome;
     if (email != null) data['email'] = email;
     if (senha != null) data['senha'] = senha;
-<<<<<<< HEAD
-=======
     if (fotoUrl != null) data['foto_url'] = fotoUrl;
->>>>>>> part3
     if (cep != null) data['cep'] = cep;
     if (logradouro != null) data['logradouro'] = logradouro;
     if (bairro != null) data['bairro'] = bairro;
     if (localidade != null) data['localidade'] = localidade;
     if (uf != null) data['uf'] = uf;
-<<<<<<< HEAD
-    if (fotoUrl != null) data['foto_url'] = fotoUrl;
-=======
->>>>>>> part3
     if (data.isEmpty) return;
     await Supabase.instance.client.from('profiles').update(data).eq('ra', ra);
-  }
-
-  Future<Address?> fetchCep(String cep) async {
-    final sanitized = cep.replaceAll(RegExp(r'[^0-9]'), '');
-    if (sanitized.length != 8) return null;
-    final response = await http.get(
-      Uri.parse('https://viacep.com.br/ws/$sanitized/json/'),
-    );
-    if (response.statusCode != 200) return null;
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic>) return null;
-    if (decoded['erro'] == true) return null;
-    return Address.fromJson(decoded);
-  }
-
-  Future<String> uploadProfileImage(
-    String ra,
-    Uint8List bytes,
-    String fileName,
-  ) async {
-    final extension = fileName.contains('.')
-        ? fileName.split('.').last.toLowerCase()
-        : 'jpg';
-    final path = '$ra/${DateTime.now().millisecondsSinceEpoch}.$extension';
-    final storage = Supabase.instance.client.storage.from('avatars');
-    await storage.uploadBinary(
-      path,
-      bytes,
-      fileOptions: FileOptions(
-        upsert: true,
-        contentType: 'image/${extension == 'jpg' ? 'jpeg' : extension}',
-      ),
-    );
-    return storage.getPublicUrl(path);
   }
 
   Future<void> saveLoggedUser(String ra) async {
@@ -170,19 +114,12 @@ class AuthRepository {
           ? DateTime.parse(map['data_nascimento'].toString())
           : DateTime(1900),
       senha: map['senha']?.toString() ?? '',
-<<<<<<< HEAD
-=======
       fotoUrl: map['foto_url']?.toString(),
->>>>>>> part3
       cep: map['cep']?.toString(),
       logradouro: map['logradouro']?.toString(),
       bairro: map['bairro']?.toString(),
       localidade: map['localidade']?.toString(),
       uf: map['uf']?.toString(),
-<<<<<<< HEAD
-      fotoUrl: map['foto_url']?.toString(),
-=======
->>>>>>> part3
     );
   }
 

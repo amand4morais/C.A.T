@@ -175,47 +175,6 @@ class _ProfileViewState extends State<ProfileView> {
     if (mounted) context.go('/login');
   }
 
-  Future<void> _buscarCep() async {
-    final cep = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cep.length != 8) return;
-    final address = await context.read<AuthViewModel>().fetchCep(cep);
-    if (address != null && mounted) {
-      _logradouroController.text = address.logradouro;
-      _bairroController.text = address.bairro;
-      _localidadeController.text = address.localidade;
-      _ufController.text = address.uf;
-    }
-  }
-
-  void _mostrarOpcoesImagem(AuthViewModel viewModel) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt_rounded),
-              title: const Text('Câmera'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                viewModel.updateProfileImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_rounded),
-              title: const Text('Galeria'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                viewModel.updateProfileImage(ImageSource.gallery);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -249,7 +208,6 @@ class _ProfileViewState extends State<ProfileView> {
                           child: CircleAvatar(
                             radius: 40,
                             backgroundColor:
-<<<<<<< HEAD
                                 fotoUrl != null && fotoUrl.isNotEmpty
                                 ? Colors.transparent
                                 : const Color(0xFF1976D2),
@@ -258,20 +216,6 @@ class _ProfileViewState extends State<ProfileView> {
                                 ? NetworkImage(fotoUrl)
                                 : null,
                             child: fotoUrl != null && fotoUrl.isNotEmpty
-=======
-                                user?.fotoUrl != null &&
-                                    user!.fotoUrl!.isNotEmpty
-                                ? Colors.transparent
-                                : const Color(0xFF1976D2),
-                            backgroundImage:
-                                user?.fotoUrl != null &&
-                                    user!.fotoUrl!.isNotEmpty
-                                ? NetworkImage(user.fotoUrl!)
-                                : null,
-                            child:
-                                user?.fotoUrl != null &&
-                                    user!.fotoUrl!.isNotEmpty
->>>>>>> part3
                                 ? null
                                 : const Icon(
                                     Icons.person_rounded,
@@ -341,11 +285,7 @@ class _ProfileViewState extends State<ProfileView> {
                           prefixIcon: const Icon(Icons.location_on_outlined),
                           suffixIcon: IconButton(
                             icon: const Icon(Icons.search_rounded),
-<<<<<<< HEAD
-                            onPressed: _buscarCep,
-=======
                             onPressed: viewModel.isLoading ? null : _buscarCep,
->>>>>>> part3
                           ),
                         ),
                       ),
@@ -364,11 +304,7 @@ class _ProfileViewState extends State<ProfileView> {
                         enabled: false,
                         decoration: const InputDecoration(
                           labelText: 'Bairro',
-<<<<<<< HEAD
-                          prefixIcon: Icon(Icons.holiday_village_outlined),
-=======
                           prefixIcon: Icon(Icons.map_outlined),
->>>>>>> part3
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -386,11 +322,7 @@ class _ProfileViewState extends State<ProfileView> {
                         enabled: false,
                         decoration: const InputDecoration(
                           labelText: 'Estado (UF)',
-<<<<<<< HEAD
-                          prefixIcon: Icon(Icons.map_outlined),
-=======
                           prefixIcon: Icon(Icons.flag_outlined),
->>>>>>> part3
                         ),
                       ),
                       const SizedBox(height: 28),

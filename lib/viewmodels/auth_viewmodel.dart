@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/address_model.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
+import '../repositories/viacep_repository.dart';
 
 class AuthViewModel extends ChangeNotifier {
   static final RegExp _emailRegExp = RegExp(
@@ -11,6 +12,7 @@ class AuthViewModel extends ChangeNotifier {
   );
 
   final AuthRepository _repository = AuthRepository();
+  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isLoading = false;
   bool _isLoggedIn = false;
@@ -106,22 +108,19 @@ class AuthViewModel extends ChangeNotifier {
     _setLoading(true);
     try {
       final user = await _repository.login(ra, password);
-      if (user != null) {
-        _currentUser = user;
-        _isLoggedIn = true;
-        _isAdmin = _repository.isAdmin(ra);
-        await _repository.saveLoggedUser(ra);
-        _setLoading(false);
-        return true;
-      }
-      _setLoading(false);
-      return false;
+      if (user == null) return false;
+      _currentUser = user;
+      _isLoggedIn = true;
+      _isAdmin = _repository.isAdmin(ra);
+      await _repository.saveLoggedUser(ra);
+      return true;
     } catch (e) {
       if (kDebugMode) {
         print('Erro na autenticação: $e');
       }
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -177,11 +176,60 @@ class AuthViewModel extends ChangeNotifier {
         uf: uf,
       );
       _currentUser = await _repository.getUserByRa(_currentUser!.ra);
-      _setLoading(false);
       return true;
     } catch (_) {
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<AddressModel?> fetchCep(String cep) async {
+    _setLoading(true);
+    try {
+      final address = await ViaCepRepository().fetchAddress(cep);
+      return address;
+    } catch (_) {
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateProfileImage(ImageSource source) async {
+    if (_currentUser == null) return false;
+    XFile? image;
+    try {
+      image = await _imagePicker.pickImage(source: source, imageQuality: 70);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao selecionar imagem: $e');
+      }
+      return false;
+    }
+    if (image == null) return false;
+    _setLoading(true);
+    try {
+      final bytes = await image.readAsBytes();
+      final rawExt = image.name.contains('.') ? image.name.split('.').last : 'jpg';
+      final ext = RegExp(r'^[a-zA-Z0-9]{1,5}$').hasMatch(rawExt) ? rawExt : 'jpg';
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final publicUrl = await _repository.uploadProfilePicture(
+        _currentUser!.ra,
+        bytes,
+        fileName,
+      );
+      if (publicUrl == null) return false;
+      await _repository.updateUser(_currentUser!.ra, fotoUrl: publicUrl);
+      _currentUser = await _repository.getUserByRa(_currentUser!.ra);
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao atualizar foto de perfil: $e');
+      }
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -226,11 +274,11 @@ class AuthViewModel extends ChangeNotifier {
     try {
       await _repository.updateUser(_currentUser!.ra, senha: newPassword);
       _currentUser = await _repository.getUserByRa(_currentUser!.ra);
-      _setLoading(false);
       return true;
     } catch (_) {
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

@@ -34,6 +34,14 @@ Aplicativo mobile desenvolvido em Flutter para gerenciamento de cursos acadêmic
 - Visualização de todos os cursos cadastrados na plataforma
 - Indicador de carregamento (`CircularProgressIndicator`) durante requisições de rede
 
+### Entrega 3 — Integração com APIs e Recursos Nativos
+
+Funcionalidades adicionadas ao Perfil do Utilizador na terceira entrega:
+
+- Captura de foto de perfil utilizando a câmera nativa do dispositivo ou escolha a partir da galeria
+- Upload e armazenamento em nuvem da imagem de perfil (Supabase Storage)
+- Preenchimento automático de dados de endereço (Logradouro, Bairro, Cidade, UF) a partir da digitação do CEP, consumindo a API pública do ViaCEP
+
 ---
 
 ## Arquitetura
@@ -71,7 +79,8 @@ lib/
 │   └── user_model.dart
 ├── repositories/
 │   ├── auth_repository.dart
-│   └── course_repository.dart
+│   ├── course_repository.dart
+│   └── viacep_repository.dart
 ├── router/
 │   └── app_router.dart
 ├── viewmodels/
@@ -84,6 +93,7 @@ lib/
 │   ├── course_details_view.dart
 │   ├── home_view.dart
 │   ├── login_view.dart
+│   ├── profile_view.dart
 │   └── register_view.dart
 └── widgets/
     ├── course_card.dart
@@ -158,6 +168,10 @@ SUPABASE_ANON_KEY=<sua-anon-key>
 
 As chaves são lidas em `lib/main.dart` via `flutter_dotenv`.
 
+### Entrega 3 — Testes Nativos
+
+> **Atenção:** para testar corretamente a funcionalidade de Câmera, o aplicativo deve ser compilado e executado em um **dispositivo físico (celular real) conectado via cabo USB**. Emuladores não possuem câmera real funcional, o que impede a validação completa dessa funcionalidade.
+
 #### 8. Gerar o APK para produção
 ```bash
 flutter build apk --release
@@ -173,6 +187,8 @@ O APK gerado estará em `build/app/outputs/flutter-apk/app-release.apk`.
 | shared_preferences | ^2.x | Persistência de sessão local |
 | supabase_flutter | ^2.x | Integração com banco de dados Supabase (Entrega 2) |
 | flutter_dotenv | ^5.x | Carregamento de variáveis de ambiente via `.env` (Entrega 2) |
+| http | ^1.2.1 | Consumo da API REST do ViaCEP (Entrega 3) |
+| image_picker | ^1.1.1 | Acesso à câmera e galeria nativas do dispositivo (Entrega 3) |
 
 As versões exatas estão registradas no `pubspec.lock`.
 
@@ -215,11 +231,11 @@ Realize o cadastro pela tela de registro. O R.A é gerado automaticamente pelo s
 
 ### Divisão de Atividades
 
-| Integrante | Entrega 1 | Entrega 2 |
-|---|---|---|
-| Amanda Morais Ribeiro | Página inicial, detalhes de curso, adquirir curso, página de perfil e README | CRUD de cursos, refatoração da autenticação |
-| José Ernesto Marra Filho | Estrutura MVVM, verificação de login, perfil de admin, cadastro de cursos, correção de erros | Criação do banco de dados no Supabase, integração das chaves via `.env`, injeção de dependências, correções e refinamentos finais |
-| Leonardo Bonfanti | Rotas, telas de login/cadastro, filtro de cursos, exclusão e edição de cursos | Adição do campo `data_nascimento`, melhorias nas views e correção de erros de funcionalidade |
+| Integrante | Entrega 1 | Entrega 2 | Entrega 3 |
+|---|---|---|---|
+| Amanda Morais Ribeiro | Página inicial, detalhes de curso, adquirir curso, página de perfil e README | CRUD de cursos, refatoração da autenticação | Atualização do método `updateProfile` e gerenciamento de imagem no `AuthViewModel` |
+| José Ernesto Marra Filho | Estrutura MVVM, verificação de login, perfil de admin, cadastro de cursos, correção de erros | Criação do banco de dados no Supabase, integração das chaves via `.env`, injeção de dependências, correções e refinamentos finais | Integração com o ViaCEP (`viacep_repository.dart`), configuração de permissões nativas e infraestrutura para o Supabase Storage |
+| Leonardo Bonfanti | Rotas, telas de login/cadastro, filtro de cursos, exclusão e edição de cursos | Adição do campo `data_nascimento`, melhorias nas views e correção de erros de funcionalidade | Implementação da tela de perfil (`profile_view.dart`) com lógica de UI para foto de perfil e endereço |
 
 ### Particularidades e Observações
 

@@ -105,6 +105,71 @@ class _ProfileViewState extends State<ProfileView> {
     }
   }
 
+  Future<void> _buscarCep() async {
+    final cep = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cep.length != 8) return;
+    final address = await context.read<AuthViewModel>().fetchCep(cep);
+    if (!mounted) return;
+    if (address == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('CEP não encontrado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    _logradouroController.text = address.logradouro ?? '';
+    _bairroController.text = address.bairro ?? '';
+    _localidadeController.text = address.localidade ?? '';
+    _ufController.text = address.uf ?? '';
+  }
+
+  void _mostrarOpcoesImagem(AuthViewModel viewModel) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera_rounded),
+                title: const Text('Câmera'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _selecionarImagem(viewModel, ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: const Text('Galeria'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _selecionarImagem(viewModel, ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _selecionarImagem(
+    AuthViewModel viewModel,
+    ImageSource source,
+  ) async {
+    final sucesso = await viewModel.updateProfileImage(source);
+    if (!mounted || sucesso) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Não foi possível atualizar a foto de perfil'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   Future<void> _logout() async {
     await context.read<AuthViewModel>().logout();
     if (mounted) context.go('/login');
@@ -184,6 +249,7 @@ class _ProfileViewState extends State<ProfileView> {
                           child: CircleAvatar(
                             radius: 40,
                             backgroundColor:
+<<<<<<< HEAD
                                 fotoUrl != null && fotoUrl.isNotEmpty
                                 ? Colors.transparent
                                 : const Color(0xFF1976D2),
@@ -192,6 +258,20 @@ class _ProfileViewState extends State<ProfileView> {
                                 ? NetworkImage(fotoUrl)
                                 : null,
                             child: fotoUrl != null && fotoUrl.isNotEmpty
+=======
+                                user?.fotoUrl != null &&
+                                    user!.fotoUrl!.isNotEmpty
+                                ? Colors.transparent
+                                : const Color(0xFF1976D2),
+                            backgroundImage:
+                                user?.fotoUrl != null &&
+                                    user!.fotoUrl!.isNotEmpty
+                                ? NetworkImage(user.fotoUrl!)
+                                : null,
+                            child:
+                                user?.fotoUrl != null &&
+                                    user!.fotoUrl!.isNotEmpty
+>>>>>>> part3
                                 ? null
                                 : const Icon(
                                     Icons.person_rounded,
@@ -261,7 +341,11 @@ class _ProfileViewState extends State<ProfileView> {
                           prefixIcon: const Icon(Icons.location_on_outlined),
                           suffixIcon: IconButton(
                             icon: const Icon(Icons.search_rounded),
+<<<<<<< HEAD
                             onPressed: _buscarCep,
+=======
+                            onPressed: viewModel.isLoading ? null : _buscarCep,
+>>>>>>> part3
                           ),
                         ),
                       ),
@@ -280,7 +364,11 @@ class _ProfileViewState extends State<ProfileView> {
                         enabled: false,
                         decoration: const InputDecoration(
                           labelText: 'Bairro',
+<<<<<<< HEAD
                           prefixIcon: Icon(Icons.holiday_village_outlined),
+=======
+                          prefixIcon: Icon(Icons.map_outlined),
+>>>>>>> part3
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -298,7 +386,11 @@ class _ProfileViewState extends State<ProfileView> {
                         enabled: false,
                         decoration: const InputDecoration(
                           labelText: 'Estado (UF)',
+<<<<<<< HEAD
                           prefixIcon: Icon(Icons.map_outlined),
+=======
+                          prefixIcon: Icon(Icons.flag_outlined),
+>>>>>>> part3
                         ),
                       ),
                       const SizedBox(height: 28),

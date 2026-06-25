@@ -6,22 +6,45 @@ CREATE TABLE profiles (
   email TEXT NOT NULL,
   senha TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'aluno',
+<<<<<<< HEAD
   cep TEXT,
   logradouro TEXT,
   bairro TEXT,
   localidade TEXT,
   uf TEXT,
   foto_url TEXT
+=======
+  foto_url text,
+  cep text,
+  logradouro text,
+  bairro text,
+  localidade text,
+  uf text
+>>>>>>> part3
 );
 
 ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
 
+<<<<<<< HEAD
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS cep TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS logradouro TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS bairro TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS localidade TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS uf TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS foto_url TEXT;
+=======
+-- Idempotente: cobre projetos cuja tabela profiles já existia antes da
+-- Parte 3 (CREATE TABLE acima não adiciona coluna em tabela já existente).
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS foto_url text,
+  ADD COLUMN IF NOT EXISTS cep text,
+  ADD COLUMN IF NOT EXISTS logradouro text,
+  ADD COLUMN IF NOT EXISTS bairro text,
+  ADD COLUMN IF NOT EXISTS localidade text,
+  ADD COLUMN IF NOT EXISTS uf text;
+
+NOTIFY pgrst, 'reload schema';
+>>>>>>> part3
 
 CREATE TABLE courses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -42,10 +65,32 @@ ALTER TABLE enrollments DISABLE ROW LEVEL SECURITY;
 INSERT INTO profiles (ra, nome, email, senha, data_nascimento, role)
 VALUES ('admin', 'Administrador do Sistema', 'admin@cat.com', 'admin', '2000-01-01', 'admin');
 
+<<<<<<< HEAD
+=======
+-- Sequence pra gerar RA de forma atômica, sem colisão entre dispositivos
+CREATE SEQUENCE IF NOT EXISTS ra_sequence;
+
+SELECT setval(
+  'ra_sequence',
+  COALESCE((SELECT MAX(ra::bigint) FROM profiles WHERE ra ~ '^[0-9]+$'), 999) + 1,
+  false
+);
+
+CREATE OR REPLACE FUNCTION generate_next_ra()
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN nextval('ra_sequence')::TEXT;
+END;
+$$;
+
+>>>>>>> part3
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('avatars', 'avatars', true)
 ON CONFLICT (id) DO NOTHING;
 
+<<<<<<< HEAD
 CREATE POLICY "avatars_public_read" ON storage.objects
   FOR SELECT USING (bucket_id = 'avatars');
 
@@ -54,3 +99,10 @@ CREATE POLICY "avatars_public_insert" ON storage.objects
 
 CREATE POLICY "avatars_public_update" ON storage.objects
   FOR UPDATE USING (bucket_id = 'avatars');
+=======
+-- storage.objects pertence à role supabase_storage_admin: ALTER/CREATE POLICY
+-- via SQL Editor falha com "must be owner of table objects". Configure a
+-- policy manualmente: Dashboard > Storage > bucket "avatars" > Policies >
+-- New policy > For full customization > operations INSERT e UPDATE,
+-- target role "anon", expressão: bucket_id = 'avatars'
+>>>>>>> part3

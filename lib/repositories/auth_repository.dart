@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+=======
+import 'package:flutter/foundation.dart';
+>>>>>>> part3
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,10 +13,8 @@ import '../models/address_model.dart';
 import '../models/user_model.dart' as app_models;
 
 class AuthRepository {
-  static const String _raCounterKey = 'ra_counter';
   static const String _loggedUserKey = 'logged_user_ra';
   static const String _isAdminKey = 'logged_user_is_admin';
-  static const int _initialRaCounter = 1000;
 
   static final AuthRepository _instance = AuthRepository._internal();
 
@@ -30,9 +32,7 @@ class AuthRepository {
     required DateTime dataNascimento,
     required String senha,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final counter = prefs.getInt(_raCounterKey) ?? _initialRaCounter;
-    final ra = counter.toString();
+    final ra = await Supabase.instance.client.rpc('generate_next_ra') as String;
     await Supabase.instance.client.from('profiles').insert({
       'ra': ra,
       'nome': nome,
@@ -41,7 +41,6 @@ class AuthRepository {
       'senha': senha,
       'role': 'aluno',
     });
-    await prefs.setInt(_raCounterKey, counter + 1);
     return ra;
   }
 
@@ -71,23 +70,37 @@ class AuthRepository {
     String? nome,
     String? email,
     String? senha,
+<<<<<<< HEAD
+=======
+    String? fotoUrl,
+>>>>>>> part3
     String? cep,
     String? logradouro,
     String? bairro,
     String? localidade,
     String? uf,
+<<<<<<< HEAD
     String? fotoUrl,
+=======
+>>>>>>> part3
   }) async {
     final Map<String, dynamic> data = {};
     if (nome != null) data['nome'] = nome;
     if (email != null) data['email'] = email;
     if (senha != null) data['senha'] = senha;
+<<<<<<< HEAD
+=======
+    if (fotoUrl != null) data['foto_url'] = fotoUrl;
+>>>>>>> part3
     if (cep != null) data['cep'] = cep;
     if (logradouro != null) data['logradouro'] = logradouro;
     if (bairro != null) data['bairro'] = bairro;
     if (localidade != null) data['localidade'] = localidade;
     if (uf != null) data['uf'] = uf;
+<<<<<<< HEAD
     if (fotoUrl != null) data['foto_url'] = fotoUrl;
+=======
+>>>>>>> part3
     if (data.isEmpty) return;
     await Supabase.instance.client.from('profiles').update(data).eq('ra', ra);
   }
@@ -157,12 +170,41 @@ class AuthRepository {
           ? DateTime.parse(map['data_nascimento'].toString())
           : DateTime(1900),
       senha: map['senha']?.toString() ?? '',
+<<<<<<< HEAD
+=======
+      fotoUrl: map['foto_url']?.toString(),
+>>>>>>> part3
       cep: map['cep']?.toString(),
       logradouro: map['logradouro']?.toString(),
       bairro: map['bairro']?.toString(),
       localidade: map['localidade']?.toString(),
       uf: map['uf']?.toString(),
+<<<<<<< HEAD
       fotoUrl: map['foto_url']?.toString(),
+=======
+>>>>>>> part3
     );
+  }
+
+  Future<String?> uploadProfilePicture(
+    String ra,
+    Uint8List fileBytes,
+    String fileName,
+  ) async {
+    try {
+      final path = '$ra/$fileName';
+      await Supabase.instance.client.storage
+          .from('avatars')
+          .uploadBinary(path, fileBytes, fileOptions: const FileOptions(upsert: true));
+      final publicUrl = Supabase.instance.client.storage
+          .from('avatars')
+          .getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao fazer upload da foto de perfil: $e');
+      }
+      return null;
+    }
   }
 }

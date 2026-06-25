@@ -137,23 +137,33 @@ class CourseDetailsView extends StatelessWidget {
                 return SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      viewModel.enroll(course);
-                      final String? message = viewModel.enrollmentMessage;
-                      if (message != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(message),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        );
-                        viewModel.clearEnrollmentMessage();
-                      }
-                    },
-                    icon: const Icon(Icons.add_rounded, size: 18),
+                    onPressed: viewModel.isLoading
+                        ? null
+                        : () async {
+                            await viewModel.enroll(course);
+                            if (!context.mounted) return;
+                            final String? message =
+                                viewModel.enrollmentMessage;
+                            if (message != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(message),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              );
+                              viewModel.clearEnrollmentMessage();
+                            }
+                          },
+                    icon: viewModel.isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_rounded, size: 18),
                     label: const Text('Inscrever-se'),
                   ),
                 );

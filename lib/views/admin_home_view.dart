@@ -6,6 +6,7 @@ import '../models/course_model.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/course_viewmodel.dart';
 import '../widgets/course_card.dart';
+import '../widgets/error_state.dart';
 
 class AdminHomeView extends StatelessWidget {
   const AdminHomeView({super.key});
@@ -128,7 +129,7 @@ class AdminHomeView extends StatelessWidget {
                 }
 
                 if (viewModel.errorMessage != null) {
-                  return _ErrorState(
+                  return ErrorState(
                     message: viewModel.errorMessage!,
                     accentColor: const Color(0xFF6A1B9A),
                     onRetry: viewModel.loadCourses,
@@ -242,60 +243,6 @@ class AdminHomeView extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  final String message;
-  final Color accentColor;
-  final VoidCallback onRetry;
-
-  const _ErrorState({
-    required this.message,
-    required this.accentColor,
-    required this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey.shade500,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Tentar novamente'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: accentColor,
-                side: BorderSide(color: accentColor),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

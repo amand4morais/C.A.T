@@ -107,15 +107,22 @@ class _ProfileViewState extends State<ProfileView> {
 
   Future<void> _buscarCep() async {
     final cep = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cep.length == 8) {
-      final address = await context.read<AuthViewModel>().fetchCep(cep);
-      if (address != null && mounted) {
-        _logradouroController.text = address.logradouro;
-        _bairroController.text = address.bairro;
-        _localidadeController.text = address.localidade;
-        _ufController.text = address.uf;
-      }
+    if (cep.length != 8) return;
+    final address = await context.read<AuthViewModel>().fetchCep(cep);
+    if (!mounted) return;
+    if (address == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('CEP não encontrado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
+    _logradouroController.text = address.logradouro ?? '';
+    _bairroController.text = address.bairro ?? '';
+    _localidadeController.text = address.localidade ?? '';
+    _ufController.text = address.uf ?? '';
   }
 
   void _mostrarOpcoesImagem(AuthViewModel viewModel) {
@@ -131,7 +138,7 @@ class _ProfileViewState extends State<ProfileView> {
                 title: const Text('Câmera'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  viewModel.updateProfileImage(ImageSource.camera);
+                  _selecionarImagem(viewModel, ImageSource.camera);
                 },
               ),
               ListTile(
@@ -139,13 +146,27 @@ class _ProfileViewState extends State<ProfileView> {
                 title: const Text('Galeria'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  viewModel.updateProfileImage(ImageSource.gallery);
+                  _selecionarImagem(viewModel, ImageSource.gallery);
                 },
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Future<void> _selecionarImagem(
+    AuthViewModel viewModel,
+    ImageSource source,
+  ) async {
+    final sucesso = await viewModel.updateProfileImage(source);
+    if (!mounted || sucesso) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Não foi possível atualizar a foto de perfil'),
+        backgroundColor: Colors.red,
+      ),
     );
   }
 
@@ -267,7 +288,7 @@ class _ProfileViewState extends State<ProfileView> {
                           prefixIcon: const Icon(Icons.location_on_outlined),
                           suffixIcon: IconButton(
                             icon: const Icon(Icons.search_rounded),
-                            onPressed: _buscarCep,
+                            onPressed: viewModel.isLoading ? null : _buscarCep,
                           ),
                         ),
                       ),

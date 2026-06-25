@@ -108,22 +108,19 @@ class AuthViewModel extends ChangeNotifier {
     _setLoading(true);
     try {
       final user = await _repository.login(ra, password);
-      if (user != null) {
-        _currentUser = user;
-        _isLoggedIn = true;
-        _isAdmin = _repository.isAdmin(ra);
-        await _repository.saveLoggedUser(ra);
-        _setLoading(false);
-        return true;
-      }
-      _setLoading(false);
-      return false;
+      if (user == null) return false;
+      _currentUser = user;
+      _isLoggedIn = true;
+      _isAdmin = _repository.isAdmin(ra);
+      await _repository.saveLoggedUser(ra);
+      return true;
     } catch (e) {
       if (kDebugMode) {
         print('Erro na autenticação: $e');
       }
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -179,11 +176,11 @@ class AuthViewModel extends ChangeNotifier {
         uf: uf,
       );
       _currentUser = await _repository.getUserByRa(_currentUser!.ra);
-      _setLoading(false);
       return true;
     } catch (_) {
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -201,27 +198,28 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<bool> updateProfileImage(ImageSource source) async {
     if (_currentUser == null) return false;
-    final XFile? image = await _imagePicker.pickImage(
-      source: source,
-      imageQuality: 70,
-    );
+    XFile? image;
+    try {
+      image = await _imagePicker.pickImage(source: source, imageQuality: 70);
+    } catch (_) {
+      return false;
+    }
     if (image == null) return false;
     _setLoading(true);
     try {
       final bytes = await image.readAsBytes();
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+      final rawExt = image.name.contains('.') ? image.name.split('.').last : 'jpg';
+      final ext = RegExp(r'^[a-zA-Z0-9]{1,5}$').hasMatch(rawExt) ? rawExt : 'jpg';
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
       final publicUrl = await _repository.uploadProfilePicture(
         _currentUser!.ra,
         bytes,
         fileName,
       );
-      if (publicUrl != null) {
-        await _repository.updateUser(_currentUser!.ra, fotoUrl: publicUrl);
-        _currentUser = await _repository.getUserByRa(_currentUser!.ra);
-        return true;
-      }
-      return false;
+      if (publicUrl == null) return false;
+      await _repository.updateUser(_currentUser!.ra, fotoUrl: publicUrl);
+      _currentUser = await _repository.getUserByRa(_currentUser!.ra);
+      return true;
     } catch (_) {
       return false;
     } finally {
@@ -239,11 +237,11 @@ class AuthViewModel extends ChangeNotifier {
     try {
       await _repository.updateUser(_currentUser!.ra, senha: newPassword);
       _currentUser = await _repository.getUserByRa(_currentUser!.ra);
-      _setLoading(false);
       return true;
     } catch (_) {
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

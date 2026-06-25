@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../models/address_model.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 
@@ -152,7 +154,15 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateProfile({String? nome, String? email}) async {
+  Future<bool> updateProfile({
+    String? nome,
+    String? email,
+    String? cep,
+    String? logradouro,
+    String? bairro,
+    String? localidade,
+    String? uf,
+  }) async {
     if (_currentUser == null) return false;
     _setLoading(true);
     try {
@@ -160,7 +170,43 @@ class AuthViewModel extends ChangeNotifier {
         _currentUser!.ra,
         nome: nome,
         email: email,
+        cep: cep,
+        logradouro: logradouro,
+        bairro: bairro,
+        localidade: localidade,
+        uf: uf,
       );
+      _currentUser = await _repository.getUserByRa(_currentUser!.ra);
+      _setLoading(false);
+      return true;
+    } catch (_) {
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<Address?> fetchCep(String cep) async {
+    try {
+      return await _repository.fetchCep(cep);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> updateProfileImage(ImageSource source) async {
+    if (_currentUser == null) return false;
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 70);
+    if (picked == null) return false;
+    _setLoading(true);
+    try {
+      final bytes = await picked.readAsBytes();
+      final url = await _repository.uploadProfileImage(
+        _currentUser!.ra,
+        bytes,
+        picked.name,
+      );
+      await _repository.updateUser(_currentUser!.ra, fotoUrl: url);
       _currentUser = await _repository.getUserByRa(_currentUser!.ra);
       _setLoading(false);
       return true;

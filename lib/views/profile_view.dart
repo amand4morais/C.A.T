@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/auth_viewmodel.dart';
@@ -15,6 +16,11 @@ class _ProfileViewState extends State<ProfileView> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nomeController;
   late final TextEditingController _emailController;
+  late final TextEditingController _cepController;
+  late final TextEditingController _logradouroController;
+  late final TextEditingController _bairroController;
+  late final TextEditingController _localidadeController;
+  late final TextEditingController _ufController;
   final TextEditingController _senhaAtualController = TextEditingController();
   final TextEditingController _novaSenhaController = TextEditingController();
   final TextEditingController _confirmarSenhaController =
@@ -30,12 +36,22 @@ class _ProfileViewState extends State<ProfileView> {
     final user = context.read<AuthViewModel>().currentUser;
     _nomeController = TextEditingController(text: user?.nome ?? '');
     _emailController = TextEditingController(text: user?.email ?? '');
+    _cepController = TextEditingController(text: user?.cep ?? '');
+    _logradouroController = TextEditingController(text: user?.logradouro ?? '');
+    _bairroController = TextEditingController(text: user?.bairro ?? '');
+    _localidadeController = TextEditingController(text: user?.localidade ?? '');
+    _ufController = TextEditingController(text: user?.uf ?? '');
   }
 
   @override
   void dispose() {
     _nomeController.dispose();
     _emailController.dispose();
+    _cepController.dispose();
+    _logradouroController.dispose();
+    _bairroController.dispose();
+    _localidadeController.dispose();
+    _ufController.dispose();
     _senhaAtualController.dispose();
     _novaSenhaController.dispose();
     _confirmarSenhaController.dispose();
@@ -69,6 +85,11 @@ class _ProfileViewState extends State<ProfileView> {
     await viewModel.updateProfile(
       nome: _nomeController.text.trim(),
       email: _emailController.text.trim(),
+      cep: _cepController.text.trim(),
+      logradouro: _logradouroController.text.trim(),
+      bairro: _bairroController.text.trim(),
+      localidade: _localidadeController.text.trim(),
+      uf: _ufController.text.trim(),
     );
 
     if (mounted) {
@@ -89,6 +110,47 @@ class _ProfileViewState extends State<ProfileView> {
     if (mounted) context.go('/login');
   }
 
+  Future<void> _buscarCep() async {
+    final cep = _cepController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cep.length != 8) return;
+    final address = await context.read<AuthViewModel>().fetchCep(cep);
+    if (address != null && mounted) {
+      _logradouroController.text = address.logradouro;
+      _bairroController.text = address.bairro;
+      _localidadeController.text = address.localidade;
+      _ufController.text = address.uf;
+    }
+  }
+
+  void _mostrarOpcoesImagem(AuthViewModel viewModel) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Câmera'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                viewModel.updateProfileImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Galeria'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                viewModel.updateProfileImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,6 +167,7 @@ class _ProfileViewState extends State<ProfileView> {
       body: Consumer<AuthViewModel>(
         builder: (context, viewModel, _) {
           final user = viewModel.currentUser;
+          final fotoUrl = user?.fotoUrl;
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Center(
@@ -116,13 +179,25 @@ class _ProfileViewState extends State<ProfileView> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Center(
-                        child: CircleAvatar(
-                          radius: 40,
-                          backgroundColor: const Color(0xFF1976D2),
-                          child: const Icon(
-                            Icons.person_rounded,
-                            size: 48,
-                            color: Colors.white,
+                        child: GestureDetector(
+                          onTap: () => _mostrarOpcoesImagem(viewModel),
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundColor:
+                                fotoUrl != null && fotoUrl.isNotEmpty
+                                ? Colors.transparent
+                                : const Color(0xFF1976D2),
+                            backgroundImage:
+                                fotoUrl != null && fotoUrl.isNotEmpty
+                                ? NetworkImage(fotoUrl)
+                                : null,
+                            child: fotoUrl != null && fotoUrl.isNotEmpty
+                                ? null
+                                : const Icon(
+                                    Icons.person_rounded,
+                                    size: 48,
+                                    color: Colors.white,
+                                  ),
                           ),
                         ),
                       ),
@@ -174,6 +249,57 @@ class _ProfileViewState extends State<ProfileView> {
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
                         validator: viewModel.validateEmail,
+                      ),
+                      const SizedBox(height: 28),
+                      const _SectionTitle(title: 'Endereço'),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _cepController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'CEP',
+                          prefixIcon: const Icon(Icons.location_on_outlined),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.search_rounded),
+                            onPressed: _buscarCep,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _logradouroController,
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Logradouro',
+                          prefixIcon: Icon(Icons.signpost_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _bairroController,
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Bairro',
+                          prefixIcon: Icon(Icons.holiday_village_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _localidadeController,
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Cidade',
+                          prefixIcon: Icon(Icons.location_city_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _ufController,
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Estado (UF)',
+                          prefixIcon: Icon(Icons.map_outlined),
+                        ),
                       ),
                       const SizedBox(height: 28),
                       const _SectionTitle(title: 'Alterar Senha'),

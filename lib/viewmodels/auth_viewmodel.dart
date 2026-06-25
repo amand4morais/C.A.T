@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../models/address_model.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
+import '../repositories/viacep_repository.dart';
 
 class AuthViewModel extends ChangeNotifier {
   static final RegExp _emailRegExp = RegExp(
@@ -9,6 +12,7 @@ class AuthViewModel extends ChangeNotifier {
   );
 
   final AuthRepository _repository = AuthRepository();
+  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isLoading = false;
   bool _isLoggedIn = false;
@@ -152,7 +156,15 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateProfile({String? nome, String? email}) async {
+  Future<bool> updateProfile({
+    String? nome,
+    String? email,
+    String? cep,
+    String? logradouro,
+    String? bairro,
+    String? localidade,
+    String? uf,
+  }) async {
     if (_currentUser == null) return false;
     _setLoading(true);
     try {
@@ -160,6 +172,11 @@ class AuthViewModel extends ChangeNotifier {
         _currentUser!.ra,
         nome: nome,
         email: email,
+        cep: cep,
+        logradouro: logradouro,
+        bairro: bairro,
+        localidade: localidade,
+        uf: uf,
       );
       _currentUser = await _repository.getUserByRa(_currentUser!.ra);
       _setLoading(false);
@@ -167,6 +184,48 @@ class AuthViewModel extends ChangeNotifier {
     } catch (_) {
       _setLoading(false);
       return false;
+    }
+  }
+
+  Future<AddressModel?> fetchCep(String cep) async {
+    _setLoading(true);
+    try {
+      final address = await ViaCepRepository().fetchAddress(cep);
+      return address;
+    } catch (_) {
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateProfileImage(ImageSource source) async {
+    if (_currentUser == null) return false;
+    final XFile? image = await _imagePicker.pickImage(
+      source: source,
+      imageQuality: 70,
+    );
+    if (image == null) return false;
+    _setLoading(true);
+    try {
+      final bytes = await image.readAsBytes();
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+      final publicUrl = await _repository.uploadProfilePicture(
+        _currentUser!.ra,
+        bytes,
+        fileName,
+      );
+      if (publicUrl != null) {
+        await _repository.updateUser(_currentUser!.ra, fotoUrl: publicUrl);
+        _currentUser = await _repository.getUserByRa(_currentUser!.ra);
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

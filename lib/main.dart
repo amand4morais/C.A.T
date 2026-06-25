@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'repositories/auth_repository.dart';
 import 'router/app_router.dart';
@@ -8,6 +10,11 @@ import 'viewmodels/course_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
   await AuthRepository().init();
   final authViewModel = AuthViewModel();
   await authViewModel.checkLoginStatus();
@@ -31,7 +38,10 @@ class CatApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: authViewModel),
-        ChangeNotifierProvider(create: (_) => CourseViewModel()),
+        ChangeNotifierProxyProvider<AuthViewModel, CourseViewModel>(
+          create: (_) => CourseViewModel(),
+          update: (_, auth, course) => course!..updateAuth(auth.currentUser?.ra),
+        ),
       ],
       child: MaterialApp.router(
         title: 'CAT Cursos',

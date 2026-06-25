@@ -4,48 +4,107 @@ import '../repositories/course_repository.dart';
 
 class CourseViewModel extends ChangeNotifier {
   final CourseRepository _repository = CourseRepository();
+
+  List<Course> _allCourses = [];
   List<Course> _filteredCourses = [];
   List<Course> _enrolledCourses = [];
   String _searchQuery = '';
   String? _enrollmentMessage;
-
-  CourseViewModel() {
-    _filteredCourses = _repository.getAllCourses();
-    _enrolledCourses = _repository.getEnrolledCourses();
-  }
+  bool _isLoading = false;
+  String? _errorMessage;
+  String? _currentRa;
 
   List<Course> get filteredCourses => _filteredCourses;
   List<Course> get enrolledCourses => _enrolledCourses;
   String get searchQuery => _searchQuery;
   String? get enrollmentMessage => _enrollmentMessage;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
-  void _refreshFilteredCourses() {
-    if (_searchQuery.trim().isEmpty) {
-      _filteredCourses = _repository.getAllCourses();
-      return;
+  CourseViewModel() {
+    loadCourses();
+  }
+
+  Future<void> loadCourses() async {
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      _allCourses = await _repository.getAllCourses();
+      _applyFilter();
+      if (_currentRa != null) {
+        _enrolledCourses = await _repository.getEnrolledCourses(_currentRa!);
+      }
+    } catch (e) {
+      _errorMessage = 'Não foi possível carregar os cursos. Tente novamente.';
+    } finally {
+      _setLoading(false);
     }
-    _filteredCourses = _repository.searchCourses(_searchQuery);
+  }
+
+  void updateAuth(String? ra) {
+    if (_currentRa != ra) {
+      _currentRa = ra;
+      if (ra != null) {
+        _loadEnrolledCoursesForCurrentUser();
+      } else {
+        _enrolledCourses = [];
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> _loadEnrolledCoursesForCurrentUser() async {
+    try {
+      _enrolledCourses = await _repository.getEnrolledCourses(_currentRa!);
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Não foi possível carregar suas inscrições.';
+      notifyListeners();
+    }
   }
 
   void search(String query) {
     _searchQuery = query;
-    _filteredCourses = _repository.searchCourses(query);
+    _applyFilter();
     notifyListeners();
   }
 
   void clearSearch() {
     _searchQuery = '';
-    _filteredCourses = _repository.getAllCourses();
+    _applyFilter();
     notifyListeners();
   }
 
-  void enroll(Course course) {
-    final success = _repository.enroll(course);
-    _enrolledCourses = _repository.getEnrolledCourses();
-    _enrollmentMessage = success
-        ? 'Inscrição em "${course.title}" realizada com sucesso!'
-        : 'Você já está inscrito em "${course.title}"';
-    notifyListeners();
+  void _applyFilter() {
+    if (_searchQuery.trim().isEmpty) {
+      _filteredCourses = List.of(_allCourses);
+      return;
+    }
+    final lower = _searchQuery.toLowerCase();
+    _filteredCourses = _allCourses
+        .where(
+          (c) =>
+              c.title.toLowerCase().contains(lower) ||
+              c.description.toLowerCase().contains(lower),
+        )
+        .toList();
+  }
+
+  Future<void> enroll(Course course) async {
+    if (_currentRa == null) return;
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      final success = await _repository.enroll(_currentRa!, course);
+      _enrolledCourses = await _repository.getEnrolledCourses(_currentRa!);
+      _enrollmentMessage = success
+          ? 'Inscrição em "${course.title}" realizada com sucesso!'
+          : 'Você já está inscrito em "${course.title}"';
+    } catch (e) {
+      _errorMessage = 'Erro ao realizar inscrição. Tente novamente.';
+    } finally {
+      _setLoading(false);
+    }
   }
 
   void clearEnrollmentMessage() {
@@ -53,27 +112,68 @@ class CourseViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addCourse(Course course) {
-    _repository.addCourse(course);
-    _refreshFilteredCourses();
-    notifyListeners();
+  Future<bool> addCourse(Course course) async {
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      final success = await _repository.addCourse(course);
+      if (!success) {
+        _errorMessage = 'Erro ao cadastrar curso. Tente novamente.';
+        return false;
+      }
+      await _reloadAll();
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('🚨 ERRO EXPLOSIVO NO CADASTRO DE CURSO: $e');
+      }
+      _errorMessage = 'Erro ao cadastrar curso. Tente novamente.';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  bool updateCourse(Course course) {
-    final success = _repository.updateCourse(course);
-    if (!success) return false;
-    _enrolledCourses = _repository.getEnrolledCourses();
-    _refreshFilteredCourses();
-    notifyListeners();
-    return true;
+  Future<bool> updateCourse(Course course) async {
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      final success = await _repository.updateCourse(course);
+      if (success) await _reloadAll();
+      return success;
+    } catch (e) {
+      _errorMessage = 'Erro ao atualizar curso. Tente novamente.';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  bool removeCourse(String courseId) {
-    final success = _repository.removeCourse(courseId);
-    if (!success) return false;
-    _enrolledCourses = _repository.getEnrolledCourses();
-    _refreshFilteredCourses();
+  Future<bool> removeCourse(String courseId) async {
+    _setLoading(true);
+    _errorMessage = null;
+    try {
+      final success = await _repository.removeCourse(courseId);
+      if (success) await _reloadAll();
+      return success;
+    } catch (e) {
+      _errorMessage = 'Erro ao remover curso. Tente novamente.';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> _reloadAll() async {
+    _allCourses = await _repository.getAllCourses();
+    _applyFilter();
+    if (_currentRa != null) {
+      _enrolledCourses = await _repository.getEnrolledCourses(_currentRa!);
+    }
+  }
+
+  void _setLoading(bool value) {
+    _isLoading = value;
     notifyListeners();
-    return true;
   }
 }

@@ -40,7 +40,18 @@ class _RegisterViewState extends State<RegisterView> {
       password: _passwordController.text,
     );
 
-    if (!mounted || ra == null) return;
+    if (!mounted) return;
+
+    if (ra == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Erro ao realizar cadastro. Verifique a conexão ou tente novamente.',
+          ),
+        ),
+      );
+      return;
+    }
 
     showDialog<void>(
       context: context,

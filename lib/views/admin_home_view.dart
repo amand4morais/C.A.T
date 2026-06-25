@@ -35,7 +35,7 @@ class AdminHomeView extends StatelessWidget {
 
     if (confirmed != true) return;
 
-    final success = viewModel.removeCourse(course.id);
+    final success = await viewModel.removeCourse(course.id);
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -43,7 +43,7 @@ class AdminHomeView extends StatelessWidget {
         content: Text(
           success
               ? 'Curso "${course.title}" removido com sucesso!'
-              : 'Não foi possível remover o curso.',
+              : viewModel.errorMessage ?? 'Não foi possível remover o curso.',
         ),
         backgroundColor: success
             ? const Color(0xFF6A1B9A)
@@ -117,9 +117,24 @@ class AdminHomeView extends StatelessWidget {
               ),
             ),
           ),
+
           Expanded(
             child: Consumer<CourseViewModel>(
               builder: (context, viewModel, _) {
+                if (viewModel.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF6A1B9A)),
+                  );
+                }
+
+                if (viewModel.errorMessage != null) {
+                  return _ErrorState(
+                    message: viewModel.errorMessage!,
+                    accentColor: const Color(0xFF6A1B9A),
+                    onRetry: viewModel.loadCourses,
+                  );
+                }
+
                 final List<Course> courses = viewModel.filteredCourses;
 
                 if (courses.isEmpty) {
@@ -227,6 +242,60 @@ class AdminHomeView extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final Color accentColor;
+  final VoidCallback onRetry;
+
+  const _ErrorState({
+    required this.message,
+    required this.accentColor,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey.shade500,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Tentar novamente'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: accentColor,
+                side: BorderSide(color: accentColor),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

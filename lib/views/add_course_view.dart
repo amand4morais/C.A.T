@@ -38,64 +38,79 @@ class _AddCourseViewState extends State<AddCourseView> {
   }
 
   String? _validateTitle(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Título é obrigatório';
-    }
+    if (value == null || value.trim().isEmpty) return 'Título é obrigatório';
     return null;
   }
 
   String? _validateDescription(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Descrição é obrigatória';
-    }
+    if (value == null || value.trim().isEmpty) return 'Descrição é obrigatória';
     return null;
   }
 
-  void _onSubmit(CourseViewModel viewModel) {
+  Future<void> _onSubmit(CourseViewModel viewModel) async {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
 
     final String title = _titleController.text.trim();
     final String description = _descriptionController.text.trim();
 
-    late final String snackBarMessage;
     if (_isEditing) {
-      final existing = widget.courseToEdit!;
       final updatedCourse = Course(
-        id: existing.id,
+        id: widget.courseToEdit!.id,
         title: title,
         description: description,
       );
-      final success = viewModel.updateCourse(updatedCourse);
+      final success = await viewModel.updateCourse(updatedCourse);
+      if (!mounted) return;
+
       if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Não foi possível atualizar o curso.'),
+          SnackBar(
+            content: Text(
+              viewModel.errorMessage ?? 'Não foi possível atualizar o curso.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
-      snackBarMessage =
-          'Curso "${updatedCourse.title}" atualizado com sucesso!';
+
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Curso "$title" atualizado com sucesso!'),
+          backgroundColor: const Color(0xFF6A1B9A),
+        ),
+      );
     } else {
       final newCourse = Course(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: title,
         description: description,
       );
-      viewModel.addCourse(newCourse);
-      snackBarMessage = 'Curso "${newCourse.title}" cadastrado com sucesso!';
-    }
+      final success = await viewModel.addCourse(newCourse);
+      if (!mounted) return;
 
-    if (!mounted) return;
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(snackBarMessage),
-        backgroundColor: const Color(0xFF6A1B9A),
-      ),
-    );
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              viewModel.errorMessage ?? 'Não foi possível cadastrar o curso.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Curso "$title" cadastrado com sucesso!'),
+          backgroundColor: const Color(0xFF6A1B9A),
+        ),
+      );
+    }
   }
 
   @override
@@ -108,89 +123,115 @@ class _AddCourseViewState extends State<AddCourseView> {
         elevation: 0,
         title: Text(
           _isEditing ? 'Editar Curso' : 'Cadastrar Curso',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Consumer<CourseViewModel>(
-          builder: (context, viewModel, _) {
-            return Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      labelText: 'Título do curso',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+      body: Consumer<CourseViewModel>(
+        builder: (context, viewModel, _) {
+          return Stack(
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _titleController,
+                        enabled: !viewModel.isLoading,
+                        decoration: InputDecoration(
+                          labelText: 'Título do curso',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF6A1B9A),
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        validator: _validateTitle,
+                        textCapitalization: TextCapitalization.sentences,
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _descriptionController,
+                        enabled: !viewModel.isLoading,
+                        decoration: InputDecoration(
+                          labelText: 'Descrição',
+                          alignLabelWithHint: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF6A1B9A),
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        maxLines: 4,
+                        validator: _validateDescription,
+                        textCapitalization: TextCapitalization.sentences,
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF6A1B9A),
-                          width: 2,
+                      const SizedBox(height: 28),
+                      SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: viewModel.isLoading
+                              ? null
+                              : () => _onSubmit(viewModel),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6A1B9A),
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: const Color(
+                              0xFF6A1B9A,
+                            ).withOpacity(0.6),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: viewModel.isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  _isEditing
+                                      ? 'Salvar Alterações'
+                                      : 'Cadastrar Curso',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    validator: _validateTitle,
-                    textCapitalization: TextCapitalization.sentences,
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: InputDecoration(
-                      labelText: 'Descrição',
-                      alignLabelWithHint: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF6A1B9A),
-                          width: 2,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    maxLines: 4,
-                    validator: _validateDescription,
-                    textCapitalization: TextCapitalization.sentences,
-                  ),
-                  const SizedBox(height: 28),
-                  ElevatedButton(
-                    onPressed: () => _onSubmit(viewModel),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6A1B9A),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      _isEditing ? 'Salvar Alterações' : 'Cadastrar Curso',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            );
-          },
-        ),
+            ],
+          );
+        },
       ),
     );
   }

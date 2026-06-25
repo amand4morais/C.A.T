@@ -1,27 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
+ 
 import '../models/course_model.dart';
 import '../viewmodels/course_viewmodel.dart';
 import '../widgets/course_card.dart';
-
+ 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
-
+ 
   @override
   State<HomeView> createState() => _HomeViewState();
 }
-
+ 
 class _HomeViewState extends State<HomeView> {
   final TextEditingController _searchController = TextEditingController();
-
+ 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,11 +51,7 @@ class _HomeViewState extends State<HomeView> {
               child: const CircleAvatar(
                 radius: 18,
                 backgroundColor: Colors.white24,
-                child: Icon(
-                  Icons.person_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: Icon(Icons.person_rounded, color: Colors.white, size: 20),
               ),
             ),
           ),
@@ -66,64 +62,74 @@ class _HomeViewState extends State<HomeView> {
           Container(
             color: const Color(0xFF1976D2),
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (_) => setState(() {}),
-              style: const TextStyle(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Buscar nos meus cursos...',
-                hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {});
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 16,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+            child: Consumer<CourseViewModel>(
+              builder: (context, viewModel, _) {
+                return TextField(
+                  controller: _searchController,
+                  onChanged: viewModel.search,
+                  style: const TextStyle(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Buscar nos meus cursos...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              viewModel.clearSearch();
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 0,
+                      horizontal: 16,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
+ 
           Expanded(
             child: Consumer<CourseViewModel>(
               builder: (context, viewModel, _) {
-                final List<Course> enrolledCourses = viewModel.enrolledCourses;
-                final String query = _searchController.text
-                    .trim()
-                    .toLowerCase();
-                final List<Course> courses = query.isEmpty
-                    ? enrolledCourses
-                    : enrolledCourses
-                          .where(
-                            (course) =>
-                                course.title.toLowerCase().contains(query) ||
-                                course.description.toLowerCase().contains(
-                                  query,
-                                ),
-                          )
-                          .toList();
-
-                if (enrolledCourses.isEmpty) {
+                // 1. Estado de carregamento
+                if (viewModel.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF1976D2),
+                    ),
+                  );
+                }
+ 
+                if (viewModel.errorMessage != null) {
+                  return _ErrorState(
+                    message: viewModel.errorMessage!,
+                    onRetry: viewModel.loadCourses,
+                  );
+                }
+ 
+                final List<Course> courses = viewModel.enrolledCourses;
+ 
+                if (courses.isEmpty) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -147,12 +153,15 @@ class _HomeViewState extends State<HomeView> {
                           ),
                           const SizedBox(height: 20),
                           OutlinedButton.icon(
-                            onPressed: () => context.push('/available-courses'),
+                            onPressed: () =>
+                                context.push('/available-courses'),
                             icon: const Icon(Icons.add_rounded, size: 18),
                             label: const Text('Explorar cursos'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF1976D2),
-                              side: const BorderSide(color: Color(0xFF1976D2)),
+                              side: const BorderSide(
+                                color: Color(0xFF1976D2),
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -167,46 +176,18 @@ class _HomeViewState extends State<HomeView> {
                     ),
                   );
                 }
-
-                if (courses.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.search_off_rounded,
-                            size: 64,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nenhum curso encontrado para a busca realizada.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey.shade500,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
+ 
                 return Padding(
                   padding: const EdgeInsets.all(16),
                   child: GridView.builder(
                     itemCount: courses.length,
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.9,
-                        ),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.9,
+                    ),
                     itemBuilder: (context, index) {
                       final Course course = courses[index];
                       return CourseCard(
@@ -221,6 +202,55 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+ 
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+ 
+  const _ErrorState({required this.message, required this.onRetry});
+ 
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey.shade500,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Tentar novamente'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF1976D2),
+                side: const BorderSide(color: Color(0xFF1976D2)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -11,10 +11,14 @@ import 'viewmodels/course_viewmodel.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-  );
+  final supabaseUrl = dotenv.env['SUPABASE_URL'];
+  final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
+  if (supabaseUrl == null || supabaseAnonKey == null) {
+    throw StateError(
+      'SUPABASE_URL e SUPABASE_ANON_KEY precisam estar definidos no arquivo .env',
+    );
+  }
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   await AuthRepository().init();
   final authViewModel = AuthViewModel();
   await authViewModel.checkLoginStatus();
@@ -80,7 +84,7 @@ class CatApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        routerConfig: AppRouter.createRouter(initialLocation),
+        routerConfig: AppRouter.createRouter(initialLocation, authViewModel),
       ),
     );
   }

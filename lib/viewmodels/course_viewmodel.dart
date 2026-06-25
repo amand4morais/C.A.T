@@ -125,7 +125,7 @@ class CourseViewModel extends ChangeNotifier {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        print('🚨 ERRO EXPLOSIVO NO CADASTRO DE CURSO: $e');
+        print('Erro ao cadastrar curso no repositório: $e');
       }
       _errorMessage = 'Erro ao cadastrar curso. Tente novamente.';
       return false;

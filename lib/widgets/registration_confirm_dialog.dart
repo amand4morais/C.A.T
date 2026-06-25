@@ -12,6 +12,7 @@ class RegistrationConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CourseViewModel viewModel = context.watch<CourseViewModel>();
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text(
@@ -25,7 +26,9 @@ class RegistrationConfirmDialog extends StatelessWidget {
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       actions: [
         OutlinedButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: viewModel.isLoading
+              ? null
+              : () => Navigator.of(context).pop(),
           style: OutlinedButton.styleFrom(
             foregroundColor: Colors.grey.shade700,
             side: BorderSide(color: Colors.grey.shade300),
@@ -37,25 +40,28 @@ class RegistrationConfirmDialog extends StatelessWidget {
           child: const Text('Cancelar'),
         ),
         ElevatedButton(
-          onPressed: () {
-            final CourseViewModel viewModel =
-                context.read<CourseViewModel>();
-            viewModel.enroll(course);
-            viewModel.clearEnrollmentMessage();
-            Navigator.of(context).pop();
-            context.go('/home');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Inscrição em "${course.title}" realizada!'),
-                backgroundColor: Colors.green.shade600,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                margin: const EdgeInsets.all(12),
-              ),
-            );
-          },
+          onPressed: viewModel.isLoading
+              ? null
+              : () async {
+                  await viewModel.enroll(course);
+                  final String? message = viewModel.enrollmentMessage;
+                  viewModel.clearEnrollmentMessage();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                  context.go('/home');
+                  if (message != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(message),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        margin: const EdgeInsets.all(12),
+                      ),
+                    );
+                  }
+                },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1976D2),
             foregroundColor: Colors.white,
@@ -64,7 +70,16 @@ class RegistrationConfirmDialog extends StatelessWidget {
             ),
             minimumSize: const Size(88, 42),
           ),
-          child: const Text('Confirmar'),
+          child: viewModel.isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Confirmar'),
         ),
       ],
     );

@@ -1,15 +1,12 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/user_model.dart' as app_models;
 
 class AuthRepository {
-  static const String _raCounterKey = 'ra_counter';
   static const String _loggedUserKey = 'logged_user_ra';
   static const String _isAdminKey = 'logged_user_is_admin';
-  static const int _initialRaCounter = 1000;
 
   static final AuthRepository _instance = AuthRepository._internal();
 
@@ -27,9 +24,7 @@ class AuthRepository {
     required DateTime dataNascimento,
     required String senha,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final counter = prefs.getInt(_raCounterKey) ?? _initialRaCounter;
-    final ra = counter.toString();
+    final ra = await Supabase.instance.client.rpc('generate_next_ra') as String;
     await Supabase.instance.client.from('profiles').insert({
       'ra': ra,
       'nome': nome,
@@ -38,7 +33,6 @@ class AuthRepository {
       'senha': senha,
       'role': 'aluno',
     });
-    await prefs.setInt(_raCounterKey, counter + 1);
     return ra;
   }
 
@@ -144,6 +138,9 @@ class AuthRepository {
           .getPublicUrl(path);
       return publicUrl;
     } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao fazer upload da foto de perfil: $e');
+      }
       return null;
     }
   }

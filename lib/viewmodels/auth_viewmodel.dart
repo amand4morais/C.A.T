@@ -201,7 +201,10 @@ class AuthViewModel extends ChangeNotifier {
     XFile? image;
     try {
       image = await _imagePicker.pickImage(source: source, imageQuality: 70);
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao selecionar imagem: $e');
+      }
       return false;
     }
     if (image == null) return false;
@@ -220,7 +223,10 @@ class AuthViewModel extends ChangeNotifier {
       await _repository.updateUser(_currentUser!.ra, fotoUrl: publicUrl);
       _currentUser = await _repository.getUserByRa(_currentUser!.ra);
       return true;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao atualizar foto de perfil: $e');
+      }
       return false;
     } finally {
       _setLoading(false);
